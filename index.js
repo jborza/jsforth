@@ -21,12 +21,45 @@ function initializeBuiltinWords(state) {
     state.words['*'] = (s) => {state.push(state.pop() * state.pop())};
     state.words['/'] = (s) => {state.push(state.pop() / state.pop())};
     state.words['.'] = (s) => { console.log(state.pop()) };
-}
+    state.words['dup'] = (s) => {
+         let x = state.pop();
+         state.push(x); 
+         state.push(x); 
+        };
+    state.words['drop'] = (s) => { state.pop()};
+    state.words['swap'] = (s) => {
+        let x2 = state.pop();
+        let x1 = state.pop();
+        state.push(x2);
+        state.push(x1);
+    }
+    state.words['over'] = (s) => {
+        let x2 = state.pop();
+        let x1 = state.pop();
+        state.push(x1);
+        state.push(x2);
+        state.push(x1); 
+    }
+    state.words['rot'] = (s) => {
+        let x3 = state.pop();
+        let x2 = state.pop();
+        let x1 = state.pop();
+        state.push(x2);
+        state.push(x3);
+        state.push(x1);
+    }
+ }
 
 function evaluateLine(state, line) {
+    if(line == '?')
+    {
+        console.log(state.stack);
+        return;
+    }
     let tokens = line.split(' ');
     for (token of tokens) {
-        evaluateToken(state, token);
+        if(evaluateToken(state, token) === false)
+            break;
     }
 }
 
