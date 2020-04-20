@@ -48,6 +48,13 @@ function initializeBuiltinWords(state) {
         state.push(x3);
         state.push(x1);
     }
+    state.words['emit'] = (s) => {
+        let c = state.pop();
+        process.stdout.write(String.fromCharCode(c));
+    }
+    state.words['cr'] = (s) => {
+        process.stdout.write('\n');
+    }
  }
 
 function evaluateLine(state, line) {
