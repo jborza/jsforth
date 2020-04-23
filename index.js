@@ -152,12 +152,13 @@ function evaluateWordDefinition(state, tokens) {
         token = tokens.shift();
         if (token == ';') {
             //end word definition
-            state.words[name] = body;
+            state.addWord(name, body);
             return;
         }
-        if (token in state.words) {
+        let word = state.findWord(token);
+        if(word !== undefined) {
             //pick up the execution token
-            body.push()
+            body.push(state.getExecutionToken(word)); //maybe redundant
             continue;
         }
         //pick up the execution token

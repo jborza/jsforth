@@ -4,3 +4,4 @@ drop dup ; <- should override drop
 : 1 2 ; : 2 1 ; 1 2 . . <- 2 2 stack: 2 2; 
 :noname 1 ; <- leaves an execution token
 : n 1 ; : n n 2 ; : n n 3 ; n <- 1 2 3
+1 2 3 ' dup execute . . <- 3 3
