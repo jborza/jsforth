@@ -11,13 +11,29 @@ function createInitialState() {
             }
             return x;
         },
-        addWord(name, code) {
+	    addWord: function(name, code) {
             word = {
                 name: name,
                 code: code
             };
             this.words.unshift(word);
-        }
+        },
+	getExecutionToken: function(name){
+		const word = this.findWord(name);
+		if(word === undefined){
+			return undefined;
+		}
+		return word; //TODO or wrapped word
+	},
+	 findWord: function(name){
+	    for (const word of this.words) {
+        	//If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+        	if (word.name == token) {
+                   return word;
+        	}
+    	    }	
+            return undefined;
+	 }
     };
 }
 
@@ -140,20 +156,10 @@ function evaluateWordDefinition(state, tokens) {
     }
 }
 
-function findWord(state,token){
-    for (const word of state.words) {
-        //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
-        if (word.name == token) {
-            return word;
-        }
-    }
-    return undefined;
-}
-
 function evaluateToken(state, tokens) {
     token = tokens.shift();
     //When the interpreter finds a word, it looks the word up in the dictionary.
-    const word = findWord(state, token);
+    const word = state.findWord(token);
     if(word !== undefined){
         //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
         if (typeof (word.code) === 'function') {
@@ -172,13 +178,19 @@ function evaluateToken(state, tokens) {
     //DO .. LOOP: remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
     //+LOOP pops the increment from the stack, e.g. 0 10 do i . -1 +loop
     //' word to obtain an execution token
-    if(token == '\''){
+    if(token == 'see'){
         let nextToken = tokens.shift();
-        let nextWord = findWord(state, nextToken);
+        let nextWord = state.findWord(nextToken);
         console.log(nextWord);
         return;
     }
-
+	if(token == '\''){
+        	let nextToken = tokens.shift();
+        	let nextWord = state.findWord(nextToken);
+	
+		let xt = state.getExecutionToken(nextToken);
+		state.push(xt);
+	}
     if (token == ':') {
         //TODO triger compilation mode
         evaluateWordDefinition(state, tokens);
