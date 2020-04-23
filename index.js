@@ -140,20 +140,29 @@ function evaluateWordDefinition(state, tokens) {
     }
 }
 
-function evaluateToken(state, tokens) {
-    token = tokens.shift();
-    //When the interpreter finds a word, it looks the word up in the dictionary.
+function findWord(state,token){
     for (const word of state.words) {
         //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
         if (word.name == token) {
-            if (typeof (word.code) === 'function') {
-                word.code(state);
-            }
-            else {
-                evaluateTokens(state, word.code);
-            }
-            return;
+            return word;
         }
+    }
+    return undefined;
+}
+
+function evaluateToken(state, tokens) {
+    token = tokens.shift();
+    //When the interpreter finds a word, it looks the word up in the dictionary.
+    const word = findWord(state, token);
+    if(word !== undefined){
+        //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+        if (typeof (word.code) === 'function') {
+            word.code(state);
+        }
+        else {
+            evaluateTokens(state, word.code);
+        }
+        return;
     }
 
     //special words
@@ -162,8 +171,16 @@ function evaluateToken(state, tokens) {
     // -  Conditionals in Forth can only be used inside definitions. 
     //DO .. LOOP: remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
     //+LOOP pops the increment from the stack, e.g. 0 10 do i . -1 +loop
+    //' word to obtain an execution token
+    if(token == '\''){
+        let nextToken = tokens.shift();
+        let nextWord = findWord(state, nextToken);
+        console.log(nextWord);
+        return;
+    }
 
     if (token == ':') {
+        //TODO triger compilation mode
         evaluateWordDefinition(state, tokens);
         return;
     }
