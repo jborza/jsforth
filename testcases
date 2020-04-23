@@ -1,7 +1,7 @@
 1 : dup2 dup ; 2  <- stack: 1 2; words: dup2
-drop dup ; <- should override drop
-: 1 2 ;  1 <- stack: 2; words: should override 1 with 2
+: drop dup ; <- should override drop
+: 1 2 ;  1 . <- 2 ; words: should override 1 with 2
 : 1 2 ; : 2 1 ; 1 2 . . <- 2 2 stack: 2 2; 
 :noname 1 ; <- leaves an execution token
-: n 1 ; : n n 2 ; : n n 3 ; n <- 1 2 3
+: n 1 ; : n n 2 ; : n n 3 ; n . . . <- 3 2 1
 1 2 3 ' dup execute . . <- 3 3

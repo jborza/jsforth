@@ -26,9 +26,8 @@ function createInitialState() {
             return word; //TODO or wrapped word
         },
         findWord: function (name) {
-            //backwards
-            for(let i = this.words.length - 1; i >= 0; i--) {
-                const word = this.words[i];
+            //forwards as we unshift the new definitions
+            for(let word of this.words) {
                 //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
                 if (word.name == name) {
                     return word;
@@ -149,16 +148,16 @@ function evaluateWordDefinition(state, tokens) {
     if (name == undefined)
         return;
     while (tokens.length > 0) {
-        token = tokens.shift();
+        let token = tokens.shift();
         if (token == ';') {
             //end word definition
             state.addWord(name, body);
             return;
         }
-        let word = state.findWord(token);
+        let word = state.getExecutionToken(token);
         if(word !== undefined) {
             //pick up the execution token
-            body.push(state.getExecutionToken(word)); //maybe redundant
+            body.push(word.code); 
             continue;
         }
         //pick up the execution token
@@ -176,6 +175,10 @@ function evaluateWordDefinition(state, tokens) {
 
 function evaluateToken(state, tokens) {
     let token = tokens.shift();
+    if (typeof (token) === 'function') {
+        token(state);
+        return;
+    }
     //When the interpreter finds a word, it looks the word up in the dictionary.
     const word = state.findWord(token);
     if (word !== undefined) {
