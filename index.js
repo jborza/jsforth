@@ -11,29 +11,40 @@ function createInitialState() {
             }
             return x;
         },
-	    addWord: function(name, code) {
+        addWord: function (name, code) {
             word = {
                 name: name,
                 code: code
             };
             this.words.unshift(word);
         },
-	getExecutionToken: function(name){
-		const word = this.findWord(name);
-		if(word === undefined){
-			return undefined;
-		}
-		return word; //TODO or wrapped word
-	},
-	 findWord: function(name){
-	    for (const word of this.words) {
-        	//If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
-        	if (word.name == token) {
-                   return word;
-        	}
-    	    }	
+        getExecutionToken: function (name) {
+            const word = this.findWord(name);
+            if (word === undefined) {
+                return undefined;
+            }
+            return word; //TODO or wrapped word
+        },
+        findWord: function (name) {
+            //backwards
+            for(let i = this.words.length - 1; i >= 0; i--) {
+                const word = this.words[i];
+                //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+                if (word.name == name) {
+                    return word;
+                }
+            }
             return undefined;
-	 }
+        },
+        execute: function(word){
+            if (typeof (word.code) === 'function') {
+                word.code(this);
+            }
+            else {
+                evaluateTokens(this, word.code);
+            }
+    
+        }
     };
 }
 
@@ -89,8 +100,14 @@ function initializeBuiltinWords(state) {
     });
     state.addWord('cr', (state) => process.stdout.write('\n'));
     state.addWord('.s', (state) => console.log(state.stack));
+    //NONSTANDARD
     state.addWord('?', (state) => console.log(state.stack));
+    //NONSTANDARD
     state.addWord('??', (state) => console.log(state.words));
+    state.addWord('execute', (state) => {
+        let word = state.pop();
+        state.execute(word);
+    });
 }
 
 function evaluateLine(state, line) {
@@ -122,6 +139,10 @@ function canAccept(state, token) {
 
 function evaluateWordDefinition(state, tokens) {
     //TODO convert to a function
+    //TODO conditionals: if ... then | if ... else ... then
+    // -  Conditionals in Forth can only be used inside definitions. 
+    //DO .. LOOP: remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
+    //+LOOP pops the increment from the stack, e.g. 0 10 do i . -1 +loop
     //eat words and store a function definition
     let body = [];
     let name = tokens.shift();
@@ -149,18 +170,14 @@ function evaluateWordDefinition(state, tokens) {
             //push the new token
             body.push(parsed);
         }
-        // if (canAccept(state, token)) {
-        //for functions don't push a token
-        // body.push(token);
-        // }
     }
 }
 
 function evaluateToken(state, tokens) {
-    token = tokens.shift();
+    let token = tokens.shift();
     //When the interpreter finds a word, it looks the word up in the dictionary.
     const word = state.findWord(token);
-    if(word !== undefined){
+    if (word !== undefined) {
         //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
         if (typeof (word.code) === 'function') {
             word.code(state);
@@ -172,25 +189,21 @@ function evaluateToken(state, tokens) {
     }
 
     //special words
-    //TODO definitions
-    //TODO conditionals: if ... then | if ... else ... then
-    // -  Conditionals in Forth can only be used inside definitions. 
-    //DO .. LOOP: remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
-    //+LOOP pops the increment from the stack, e.g. 0 10 do i . -1 +loop
     //' word to obtain an execution token
-    if(token == 'see'){
+    if (token == 'see') {
         let nextToken = tokens.shift();
         let nextWord = state.findWord(nextToken);
         console.log(nextWord);
         return;
     }
-	if(token == '\''){
-        	let nextToken = tokens.shift();
-        	let nextWord = state.findWord(nextToken);
-	
-		let xt = state.getExecutionToken(nextToken);
-		state.push(xt);
-	}
+    if (token == '\'') {
+        let nextToken = tokens.shift();
+        let nextWord = state.findWord(nextToken);
+
+        let xt = state.getExecutionToken(nextToken);
+        state.push(xt);
+        return;
+    }
     if (token == ':') {
         //TODO triger compilation mode
         evaluateWordDefinition(state, tokens);
