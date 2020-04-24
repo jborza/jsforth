@@ -52,7 +52,6 @@ function initializeBuiltinWords(state) {
     state.addWord('+', (s) => {
         state.push(state.pop() + state.pop())
     });
-    // state.words['+'] =  };
     state.addWord('-', (s) => {
         state.push(state.pop() - state.pop())
     });
@@ -63,7 +62,8 @@ function initializeBuiltinWords(state) {
         state.push(state.pop() / state.pop())
     });
     state.addWord('.', (s) => {
-        console.log(state.pop())
+        process.stdout.write(state.pop().toString());
+        process.stdout.write(' ');
     });
     state.addWord('dup', (s) => {
         let x = state.pop();
@@ -122,6 +122,11 @@ function initializeBuiltinWords(state) {
         state.push(booleanToForthFlag(state.pop() ^ state.pop()));
     });
     state.addWord('invert', (state)=> state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
+    state.addWord('mod', state => {
+        let a = state.pop();
+        let b = state.pop();
+        state.push(b % a);
+    })
     //NONSTANDARD
     state.addWord('?', (state) => console.log(state.stack));
     //NONSTANDARD
@@ -137,6 +142,8 @@ function evaluateLine(state, line) {
     let tokens = line.split(' ');
     //feed them into the evaluation function
     evaluateTokens(state, tokens);
+    //process.stdout.write('ok'); //no ok now
+    process.stdout.write('\n')
 }
 
 function evaluateTokens(state, tokens) {
@@ -221,7 +228,7 @@ function evaluateToken(state, tokens) {
     if (token == 'see') {
         let nextToken = tokens.shift();
         let nextWord = state.findWord(nextToken);
-        console.log(nextWord);
+        console.log(nextWord.code);
         return;
     }
     if (token == '\'') {
