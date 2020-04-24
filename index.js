@@ -99,14 +99,38 @@ function initializeBuiltinWords(state) {
     });
     state.addWord('cr', (state) => process.stdout.write('\n'));
     state.addWord('.s', (state) => console.log(state.stack));
-    //NONSTANDARD
-    state.addWord('?', (state) => console.log(state.stack));
-    //NONSTANDARD
-    state.addWord('??', (state) => console.log(state.words));
     state.addWord('execute', (state) => {
         let word = state.pop();
         state.execute(word);
     });
+    state.addWord('>', (state) => {
+        state.push(booleanToForthFlag(state.pop() < state.pop()));
+    });
+    state.addWord('<', (state) => {
+        state.push(booleanToForthFlag(state.pop() > state.pop()));
+    });
+    state.addWord('=', (state) => {
+        state.push(booleanToForthFlag(state.pop() == state.pop()));
+    });
+    state.addWord('and', (state) => {
+        state.push(booleanToForthFlag(state.pop() && state.pop()));
+    });
+    state.addWord('and', (state) => {
+        state.push(booleanToForthFlag(state.pop() || state.pop()));
+    });
+    state.addWord('xor', (state) => {
+        state.push(booleanToForthFlag(state.pop() ^ state.pop()));
+    });
+    state.addWord('invert', (state)=> state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
+    //NONSTANDARD
+    state.addWord('?', (state) => console.log(state.stack));
+    //NONSTANDARD
+    state.addWord('??', (state) => console.log(state.words));
+
+}
+
+function booleanToForthFlag(boolean){
+    return boolean ? -1 : 0;
 }
 
 function evaluateLine(state, line) {
