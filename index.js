@@ -2,6 +2,7 @@ function createInitialState() {
     return {
         stack: [],
         words: [],
+        memory: [],
 
         push: function (x) { return this.stack.push(x) },
         pop: function () {
@@ -53,13 +54,17 @@ function initializeBuiltinWords(state) {
         state.push(state.pop() + state.pop())
     });
     state.addWord('-', (s) => {
-        state.push(state.pop() - state.pop())
+        let b = state.pop();
+        let a = state.pop();
+        state.push(a - b);
     });
     state.addWord('*', (s) => {
         state.push(state.pop() * state.pop())
     });
     state.addWord('/', (s) => {
-        state.push(state.pop() / state.pop())
+        let b = state.pop();
+        let a = state.pop();
+        state.push(Math.floor(a / b));
     });
     state.addWord('.', (s) => {
         process.stdout.write(state.pop().toString());
@@ -127,11 +132,32 @@ function initializeBuiltinWords(state) {
         let b = state.pop();
         state.push(b % a);
     })
-    //NONSTANDARD
-    state.addWord('?', (state) => console.log(state.stack));
+
+    state.addWord('constant', (state) => {
+        //TODO implement
+    });
+    state.addWord('variable', (state) => {
+
+    });
+
+    //store a value at an address
+    state.addWord('!', (state) => {
+        let address = state.pop();
+        let value = state.pop();
+        state.memory[address] = value;
+    });
+    state.addWord('@', state => {
+        let address = state.pop();
+        state.push(state.memory[address]);
+    });
+
+
+    state.addWord('?', ['@', '.']); //? is defined as @ .
+    //state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
+    state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.words));
-
+    state.addWord('???', (state) => console.log(state.memory));
 }
 
 function booleanToForthFlag(boolean) {
