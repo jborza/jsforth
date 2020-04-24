@@ -27,7 +27,7 @@ function createInitialState() {
         },
         findWord: function (name) {
             //forwards as we unshift the new definitions
-            for(let word of this.words) {
+            for (let word of this.words) {
                 //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
                 if (word.name == name) {
                     return word;
@@ -35,14 +35,14 @@ function createInitialState() {
             }
             return undefined;
         },
-        execute: function(word){
+        execute: function (word) {
             if (typeof (word.code) === 'function') {
                 word.code(this);
             }
             else {
                 evaluateTokens(this, word.code);
             }
-    
+
         }
     };
 }
@@ -115,13 +115,13 @@ function initializeBuiltinWords(state) {
     state.addWord('and', (state) => {
         state.push(booleanToForthFlag(state.pop() && state.pop()));
     });
-    state.addWord('and', (state) => {
+    state.addWord('or', (state) => {
         state.push(booleanToForthFlag(state.pop() || state.pop()));
     });
     state.addWord('xor', (state) => {
         state.push(booleanToForthFlag(state.pop() ^ state.pop()));
     });
-    state.addWord('invert', (state)=> state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
+    state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
     state.addWord('mod', state => {
         let a = state.pop();
         let b = state.pop();
@@ -134,7 +134,7 @@ function initializeBuiltinWords(state) {
 
 }
 
-function booleanToForthFlag(boolean){
+function booleanToForthFlag(boolean) {
     return boolean ? -1 : 0;
 }
 
@@ -186,9 +186,9 @@ function evaluateWordDefinition(state, tokens) {
             return;
         }
         let word = state.getExecutionToken(token);
-        if(word !== undefined) {
+        if (word !== undefined) {
             //pick up the execution token
-            body.push(word.code); 
+            body.push(word.code);
             continue;
         }
         //pick up the execution token
@@ -262,7 +262,9 @@ function repl() {
     let stdin = process.openStdin();
     let state = createInitialState();
     initializeBuiltinWords(state);
-    console.log('? ')
+    if (process.argv.includes('/noprompt') === false) {
+        console.log('? ')
+    }
 
     stdin.addListener("data", function (line) {
         let trimmedLine = line.toString().trim();
