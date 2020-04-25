@@ -1,7 +1,7 @@
 function createInitialState() {
     return {
         stack: [],
-        words: [],
+        dictionary: [],
         memory: [],
 
         push: function (x) { return this.stack.push(x) },
@@ -17,7 +17,7 @@ function createInitialState() {
                 name: name,
                 code: code
             };
-            this.words.unshift(word);
+            this.dictionary.unshift(word);
         },
         getExecutionToken: function (name) {
             const word = this.findWord(name);
@@ -28,7 +28,7 @@ function createInitialState() {
         },
         findWord: function (name) {
             //forwards as we unshift the new definitions
-            for (let word of this.words) {
+            for (let word of this.dictionary) {
                 //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
                 if (word.name == name) {
                     return word;
