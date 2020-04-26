@@ -234,12 +234,34 @@ function initializeBuiltinWords(state) {
         let value = state.pop();
         state.memory[address] += value;
     });
+    //state.addWord('+!', ['dup', '@', 'rot', '+', 'swap', '!' ])
+    // : +! ( n addr -- ) dup @ rot + swap !
 
     //comment word
     state.addWord('(', state => {
         let word = state.getNextDelimitedWord(')');
         //do nothing - discard word
     });
+
+    state.addWord('see', state=>{
+        let nextWord = state.getNextInputWord();
+        let word = state.findWord(nextWord);
+        console.log(word.code);
+    })
+
+    state.addWord('1+', ['1','+']);
+    state.addWord('1-', ['1','-']);
+    state.addWord('2+', ['2','+']);
+    state.addWord('2-', ['2','-']);
+    state.addWord('2*', ['2','*']);
+    state.addWord('2/', ['2','/']);
+    state.addWord('2drop', ['drop','drop']);
+    state.addWord('2dup', ['dup','dup']);
+    state.addWord('0<', ['0', '<']);
+    state.addWord('0>', ['0', '>']);
+    state.addWord('0=', ['0', '=']);
+    state.addWord('true', ['-1']);
+    state.addWord('false', ['0']);
 
 
     state.addWord('?', ['@', '.']); //? is defined as @ .
@@ -312,59 +334,11 @@ function evaluateWordDefinition(state, tokens) {
     }
 }
 
-// function evaluateToken(state, tokens) {
-//     let token = tokens.shift();
-//     if (typeof (token) === 'function') {
-//         token(state);
-//         return;
-//     }
-//     //When the interpreter finds a word, it looks the word up in the dictionary.
-//     const word = state.findWord(token);
-//     if (word !== undefined) {
-//         //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
-//         if (typeof (word.code) === 'function') {
-//             word.code(state);
-//         }
-//         else {
-//             evaluateTokens(state, word.code);
-//         }
-//         return;
-//     }
-
-//     //special words
-//     //' word to obtain an execution token
-//     if (token == 'see') {
-//         let nextToken = tokens.shift();
-//         let nextWord = state.findWord(nextToken);
-//         console.log(nextWord.code);
-//         return;
-//     }
-//     if (token == '\'') {
-//         let nextToken = tokens.shift();
-//         let nextWord = state.findWord(nextToken);
-
-//         let xt = state.getExecutionToken(nextToken);
-//         state.push(xt);
-//         return;
-//     }
 //     if (token == ':') {
 //         //TODO triger compilation mode
 //         evaluateWordDefinition(state, tokens);
 //         return;
 //     }
-
-//     //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
-//     const parsed = parseInt(token);
-//     if (isNaN(parsed)) {
-//         console.log(token + ' ?');
-//         return false;
-//     }
-//     else {
-//         //push the new token
-//         state.stack.push(parsed);
-//     }
-//     return true;
-// }
 
 function repl() {
     let stdin = process.openStdin();
