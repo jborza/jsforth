@@ -41,10 +41,6 @@ function createInitialState() {
         },
 
         interpretToken: function (token) {
-            if (typeof (token) === 'function') {
-                token(state);
-                return;
-            }
             //When the interpreter finds a word, it looks the word up in the dictionary.
             const word = this.findWord(token);
             if (word !== undefined) {
@@ -90,7 +86,7 @@ function createInitialState() {
                 else {
                     // compile a definition for this word
                     let xt = this.getExecutionToken(token);
-                    this.currentSymbolCode.push(word.code);
+                    this.currentSymbolCode = this.currentSymbolCode.concat(word.code);
                 }
                 return;
             }
@@ -286,7 +282,6 @@ function initializeBuiltinWords(state) {
     });
 
     state.addWord('+!', state => {
-        //TODO could be implemented in forth?
         let address = state.pop();
         let value = state.pop();
         state.memory[address] += value;
@@ -326,7 +321,7 @@ function initializeBuiltinWords(state) {
     //state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
     // state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
-    state.addWord('??', (state) => console.log(state.words));
+    state.addWord('??', (state) => console.log(state.dictionary));
     state.addWord('???', (state) => console.log(state.memory));
 
     // compile mode tokens
