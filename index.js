@@ -208,7 +208,7 @@ function initializeBuiltinWords(state) {
         let nextWord = state.getNextInputWord();
         state.memory.push(0);
         let index = state.memory.length - 1;
-        state.addWord(nextWord, state=>state.push(index));
+        state.addWord(nextWord, state => state.push(index));
     });
     state.addWord('\'', state => {
         let nextWord = state.getNextInputWord();
@@ -243,20 +243,25 @@ function initializeBuiltinWords(state) {
         //do nothing - discard word
     });
 
-    state.addWord('see', state=>{
+    state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
         let word = state.findWord(nextWord);
         console.log(word.code);
-    })
+    });
 
-    state.addWord('1+', ['1','+']);
-    state.addWord('1-', ['1','-']);
-    state.addWord('2+', ['2','+']);
-    state.addWord('2-', ['2','-']);
-    state.addWord('2*', ['2','*']);
-    state.addWord('2/', ['2','/']);
-    state.addWord('2drop', ['drop','drop']);
-    state.addWord('2dup', ['dup','dup']);
+    state.addWord('.\"', state => {
+        let word = state.getNextDelimitedWord('\"');
+        print(word);
+    });
+
+    state.addWord('1+', ['1', '+']);
+    state.addWord('1-', ['1', '-']);
+    state.addWord('2+', ['2', '+']);
+    state.addWord('2-', ['2', '-']);
+    state.addWord('2*', ['2', '*']);
+    state.addWord('2/', ['2', '/']);
+    state.addWord('2drop', ['drop', 'drop']);
+    state.addWord('2dup', ['dup', 'dup']);
     state.addWord('0<', ['0', '<']);
     state.addWord('0>', ['0', '>']);
     state.addWord('0=', ['0', '=']);
@@ -270,6 +275,10 @@ function initializeBuiltinWords(state) {
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.words));
     state.addWord('???', (state) => console.log(state.memory));
+}
+
+function print(x){
+    process.stdout.write(x);
 }
 
 function booleanToForthFlag(boolean) {
