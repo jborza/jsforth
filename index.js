@@ -61,6 +61,8 @@ function createInitialState() {
         },
 
         getNextDelimitedWord: function (delimiter) {
+            //trim leading spaces
+            this.input = this.input.trimStart();
             let index = this.input.indexOf(delimiter);
             if (index == -1) {
                 index = this.input.length;
