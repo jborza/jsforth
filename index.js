@@ -196,10 +196,12 @@ function initializeBuiltinWords(state) {
     })
 
     state.addWord('constant', (state) => {
-        //TODO implement
+        let nextWord = state.getNextInputWord();
+        let value = state.pop();
+        state.addWord(nextWord, state => state.push(value));
     });
     state.addWord('variable', (state) => {
-
+        let nextWord = state.getNextInputWord();
     });
 
     //store a value at an address
@@ -222,7 +224,7 @@ function initializeBuiltinWords(state) {
 
     state.addWord('?', ['@', '.']); //? is defined as @ .
     //state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
-    state.addWord('invert', ['-1', '*', '1', '-'])
+    // state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.words));
     state.addWord('???', (state) => console.log(state.memory));
