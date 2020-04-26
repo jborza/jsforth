@@ -26,3 +26,14 @@ TODO:
 - @ // fetches the value from a memory location
 - +! // The word +! is used to increase the value of a variable by a certain amount (like += in C-based languages).
 - ? (addr -) // displays the contents of a variable
+
+The parser should be available to the words. 
+
+Also the words should not just be split by empty space.
+
+Differently, the word ( should ask the parser to collect a sequence of characters until ) and discard the results.
+Any word, not just the main interpreter, can call the parser.
+
+COMPILATION, in this system, means adding (a new word) to the top of the dictionary. To do this, each called wordname is translated from the ASCII name found in the source text to the corresponding memory addresses of its entry point. This number is added to the end of the "object code" definition of the word.
+
+probably by: word	( char -- pstr ) 	Collect a string delimited by char from input string and place in memory at pstr.

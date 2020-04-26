@@ -3,6 +3,7 @@ function createInitialState() {
         stack: [],
         dictionary: [],
         memory: [],
+        input: undefined,
 
         push: function (x) { return this.stack.push(x) },
         pop: function () {
@@ -12,6 +13,71 @@ function createInitialState() {
             }
             return x;
         },
+
+        evaluateLine: function (line) {
+            this.input = line;
+            while (true) {
+                let nextToken = this.getNextInputWord();
+                if (nextToken === undefined) {
+                    break;
+                }
+                this.evaluateToken(nextToken);
+            }
+            //let tokens = line.split(' ');
+
+            //feed them into the evaluation function
+            //evaluateTokens(this, tokens);
+            //process.stdout.write('ok'); //no ok now
+            process.stdout.write('\n')
+        },
+
+        evaluateToken: function (token) {
+            if (typeof (token) === 'function') {
+                token(state);
+                return;
+            }
+            //When the interpreter finds a word, it looks the word up in the dictionary.
+            const word = this.findWord(token);
+            if (word !== undefined) {
+                //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+                if (typeof (word.code) === 'function') {
+                    word.code(state);
+                }
+                else {
+                    evaluateTokens(state, word.code);
+                }
+                return;
+            }
+             //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
+            const parsed = parseInt(token);
+            if (isNaN(parsed)) {
+                console.log(token + ' ?');
+                return false;
+            }
+            else {
+                //push the new token
+                this.stack.push(parsed);
+            }
+            return true;
+        },
+
+        getNextInputWord: function () {
+            return this.getNextDelimitedWord(' ');
+        },
+
+        getNextDelimitedWord: function (delimiter) {
+            let index = this.input.indexOf(delimiter);
+            if (index == -1) {
+                index = this.input.length;
+            }
+            let word = this.input.substring(0, index);
+            if (this.input.length > index + 1)
+                this.input = this.input.substring(index + 1);
+            else
+                this.input = undefined;
+            return word;
+        },
+
         addWord: function (name, code) {
             word = {
                 name: name,
@@ -43,7 +109,6 @@ function createInitialState() {
             else {
                 evaluateTokens(this, word.code);
             }
-
         }
     };
 }
@@ -126,7 +191,7 @@ function initializeBuiltinWords(state) {
     state.addWord('xor', (state) => {
         state.push(booleanToForthFlag(state.pop() ^ state.pop()));
     });
-    state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
+    state.addWord('invert', state => state.push(~state.pop()));// (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
     state.addWord('mod', state => {
         let a = state.pop();
         let b = state.pop();
@@ -151,6 +216,12 @@ function initializeBuiltinWords(state) {
         state.push(state.memory[address]);
     });
 
+    //comment word
+    state.addWord('(', state => {
+        let word = state.getNextDelimitedWord(')');
+        //discard word;
+    });
+
 
     state.addWord('?', ['@', '.']); //? is defined as @ .
     //state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
@@ -164,13 +235,15 @@ function booleanToForthFlag(boolean) {
     return boolean ? -1 : 0;
 }
 
-function evaluateLine(state, line) {
-    let tokens = line.split(' ');
-    //feed them into the evaluation function
-    evaluateTokens(state, tokens);
-    //process.stdout.write('ok'); //no ok now
-    process.stdout.write('\n')
-}
+// function evaluateLine(state, line) {
+//     state.input = line;
+//     let tokens = line.split(' ');
+
+//     //feed them into the evaluation function
+//     evaluateTokens(state, tokens);
+//     //process.stdout.write('ok'); //no ok now
+//     process.stdout.write('\n')
+// }
 
 function evaluateTokens(state, tokens) {
     while (tokens.length > 0) {
@@ -294,7 +367,7 @@ function repl() {
 
     stdin.addListener("data", function (line) {
         let trimmedLine = line.toString().trim();
-        evaluateLine(state, trimmedLine);
+        state.evaluateLine(trimmedLine);
     });
 }
 
