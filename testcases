@@ -19,13 +19,10 @@
 # load and store
 42 0 ! 0 ? <- 42
 42 0 ! 0 @ . <- 42
+
+# variables load and store
 variable aaa 99 aaa ! aaa @ . <- 99
 
-
-#function definition
-1 : two 2 ; two . <- 2
-1 : dup2 dup ; 2 dup2 . . <- 2 2
-: three 3 3 3 ; . . . <- 3 3 3
 
 #comparisons and binary operators
 
@@ -55,6 +52,12 @@ variable aaa 99 aaa ! aaa @ . <- 99
 # execution token basic
 1 2 3 ' dup execute . . <- 3 3
 
+#function definition
+1 : two 2 ; two . <- 2
+1 : dup2 dup ; 2 dup2 . . <- 2 2
+: three 3 3 3 ; . . . <- 3 3 3
+
+
 #function redefinition
 
 1 : drop dup ; drop . . <- 1 1
@@ -66,4 +69,5 @@ variable aaa 99 aaa ! aaa @ . <- 99
 : n 1 ; : n 2 ; n . <- 2
 : n 1 ; : n n 2 ; n . . <- 2 1
 : n 1 ; : n n 2 ; : n n 3 ; n . . . <- 3 2 1
+: hello .”hello world” ; : doublehello hello hello ; : hello “new hello” ; doublehello <- hello world hello world
 

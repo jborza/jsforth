@@ -16,18 +16,13 @@ function createInitialState() {
 
         evaluateLine: function (line) {
             this.input = line;
-            while (true) {
+            while (this.input !== undefined) {
                 let nextToken = this.getNextInputWord();
                 if (nextToken === undefined) {
                     break;
                 }
                 this.evaluateToken(nextToken);
             }
-            //let tokens = line.split(' ');
-
-            //feed them into the evaluation function
-            //evaluateTokens(this, tokens);
-            //process.stdout.write('ok'); //no ok now
             process.stdout.write('\n')
         },
 
@@ -41,10 +36,10 @@ function createInitialState() {
             if (word !== undefined) {
                 //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
                 if (typeof (word.code) === 'function') {
-                    word.code(state);
+                    word.code(this);
                 }
                 else {
-                    evaluateTokens(state, word.code);
+                    evaluateTokens(this, word.code);
                 }
                 return;
             }
@@ -235,16 +230,6 @@ function booleanToForthFlag(boolean) {
     return boolean ? -1 : 0;
 }
 
-// function evaluateLine(state, line) {
-//     state.input = line;
-//     let tokens = line.split(' ');
-
-//     //feed them into the evaluation function
-//     evaluateTokens(state, tokens);
-//     //process.stdout.write('ok'); //no ok now
-//     process.stdout.write('\n')
-// }
-
 function evaluateTokens(state, tokens) {
     while (tokens.length > 0) {
         if (evaluateToken(state, tokens) === false)
@@ -303,59 +288,59 @@ function evaluateWordDefinition(state, tokens) {
     }
 }
 
-function evaluateToken(state, tokens) {
-    let token = tokens.shift();
-    if (typeof (token) === 'function') {
-        token(state);
-        return;
-    }
-    //When the interpreter finds a word, it looks the word up in the dictionary.
-    const word = state.findWord(token);
-    if (word !== undefined) {
-        //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
-        if (typeof (word.code) === 'function') {
-            word.code(state);
-        }
-        else {
-            evaluateTokens(state, word.code);
-        }
-        return;
-    }
+// function evaluateToken(state, tokens) {
+//     let token = tokens.shift();
+//     if (typeof (token) === 'function') {
+//         token(state);
+//         return;
+//     }
+//     //When the interpreter finds a word, it looks the word up in the dictionary.
+//     const word = state.findWord(token);
+//     if (word !== undefined) {
+//         //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+//         if (typeof (word.code) === 'function') {
+//             word.code(state);
+//         }
+//         else {
+//             evaluateTokens(state, word.code);
+//         }
+//         return;
+//     }
 
-    //special words
-    //' word to obtain an execution token
-    if (token == 'see') {
-        let nextToken = tokens.shift();
-        let nextWord = state.findWord(nextToken);
-        console.log(nextWord.code);
-        return;
-    }
-    if (token == '\'') {
-        let nextToken = tokens.shift();
-        let nextWord = state.findWord(nextToken);
+//     //special words
+//     //' word to obtain an execution token
+//     if (token == 'see') {
+//         let nextToken = tokens.shift();
+//         let nextWord = state.findWord(nextToken);
+//         console.log(nextWord.code);
+//         return;
+//     }
+//     if (token == '\'') {
+//         let nextToken = tokens.shift();
+//         let nextWord = state.findWord(nextToken);
 
-        let xt = state.getExecutionToken(nextToken);
-        state.push(xt);
-        return;
-    }
-    if (token == ':') {
-        //TODO triger compilation mode
-        evaluateWordDefinition(state, tokens);
-        return;
-    }
+//         let xt = state.getExecutionToken(nextToken);
+//         state.push(xt);
+//         return;
+//     }
+//     if (token == ':') {
+//         //TODO triger compilation mode
+//         evaluateWordDefinition(state, tokens);
+//         return;
+//     }
 
-    //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
-    const parsed = parseInt(token);
-    if (isNaN(parsed)) {
-        console.log(token + ' ?');
-        return false;
-    }
-    else {
-        //push the new token
-        state.stack.push(parsed);
-    }
-    return true;
-}
+//     //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
+//     const parsed = parseInt(token);
+//     if (isNaN(parsed)) {
+//         console.log(token + ' ?');
+//         return false;
+//     }
+//     else {
+//         //push the new token
+//         state.stack.push(parsed);
+//     }
+//     return true;
+// }
 
 function repl() {
     let stdin = process.openStdin();
