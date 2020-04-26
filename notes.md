@@ -1,3 +1,15 @@
+
+# TODO:
+
+- do .. loop remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
+- do .. loop+ pops the increment from the stack, e.g. 0 10 do i . -1 +loop
+- if ... then | if ... else ... then
+- ? (addr -) // displays the contents of a variable
+- :noname
+- state - should be true (compile) or false (interpreting) state
+
+# notes 
+
 The word : (colon) parses a name as a parameter, creates a dictionary entry (a colon definition) and enters compilation state. The interpreter continues to read space-delimited words from the user input device. If a word is found, the interpreter executes the compilation semantics associated with the word, instead of the interpretation semantics. The default compilation semantics of a word are to append its interpretation semantics to the current definition.[21]
 
 words should not be a dictionary, but a linked list (or an array with two properties: name and body)
@@ -17,11 +29,7 @@ or easier - always a list and it can include a native function?
 
 https://www.forth.com/starting-forth/9-forth-execution/
 
-TODO:
-- do .. loop
-- do .. loop+
-- ? (addr -) // displays the contents of a variable
-- :noname
+# more notes
 
 The parser should be available to the words. 
 
@@ -33,3 +41,11 @@ Any word, not just the main interpreter, can call the parser.
 COMPILATION, in this system, means adding (a new word) to the top of the dictionary. To do this, each called wordname is translated from the ASCII name found in the source text to the corresponding memory addresses of its entry point. This number is added to the end of the "object code" definition of the word.
 
 probably by: word	( char -- pstr ) 	Collect a string delimited by char from input string and place in memory at pstr.
+
+The reason that this didn't happen is bound up in the way that : works. The word : does two special things. The first special thing that it does prevents the text interpreter from ever seeing the characters add-two. The text interpreter uses a variable called >IN (pronounced “to-in”) to keep track of where it is in the input line. When it encounters the word : it behaves in exactly the same way as it does for any other word; it looks it up in the name dictionary, finds its xt and executes it. When : executes, it looks at the input buffer, finds the word add-two and advances the value of >IN to point past it. It then does some other stuff associated with creating the new definition (including creating an entry for add-two in the name dictionary). When the execution of : completes, control returns to the text interpreter, which is oblivious to the fact that it has been tricked into ignoring part of the input line.
+
+Words like : – words that advance the value of >IN and so prevent the text interpreter from acting on the whole of the input line – are called parsing words.
+
+also, there is "state" keeping track of the current itnerpreter state. not really isCompileMode
+
+In ANS Forth, the current state of the interpreter can be read from the flag STATE which contains the value true when in compilation state and false otherwise. This allows the implementation of so-called state-smart words with behavior that changes according to the current state of the interpreter.
