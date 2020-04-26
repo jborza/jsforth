@@ -4,6 +4,7 @@
 # print
 1 . <- 1
 1 2 3 4 . . . <- 4 3 2
+65 emit <- A
 
 # comments
 1 ( comment 2 . ) . <- 1
@@ -13,6 +14,8 @@
 1 2 dup . . . <- 2 2 1
 1 2 drop . <- 1
 1 2 swap . . <- 1 2
+1 2 over . . . <- 1 2 1
+3 4 5 rot . . . <- 3 5 4
 
 # arithmetics
 1 2 + . <- 3
