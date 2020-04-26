@@ -226,7 +226,6 @@ function initializeBuiltinWords(state) {
         let c = state.pop();
         process.stdout.write(String.fromCharCode(c));
     });
-    state.addWord('cr', (state) => process.stdout.write('\n'));
     state.addWord('.s', (state) => console.log(state.stack));
     state.addWord('execute', (state) => {
         let word = state.pop();
@@ -361,6 +360,8 @@ function initializeForthWords(state) {
     : 0< 0 < ;
     : 0> 0 > ;
     : 0= 0 = ;
+    13 constant newline
+    : cr newline emit ;
     `;
     for(line of initCode.split('\n')){
         if(line.trim().length == 0)
