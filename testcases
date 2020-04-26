@@ -60,6 +60,7 @@ variable aaa 99 aaa ! aaa @ . <- 99
 10 5 mod 0 = . <- -1
 
 # execution token basic
+99 ' . execute <- 99
 1 2 3 ' dup execute . . <- 3 3
 
 #function definition

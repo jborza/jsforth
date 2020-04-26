@@ -43,7 +43,7 @@ function createInitialState() {
                 }
                 return;
             }
-             //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
+            //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
             const parsed = parseInt(token);
             if (isNaN(parsed)) {
                 console.log(token + ' ?');
@@ -129,7 +129,11 @@ function initializeBuiltinWords(state) {
         state.push(Math.floor(a / b));
     });
     state.addWord('.', (s) => {
-        process.stdout.write(state.pop().toString());
+        let value = state.pop();
+        if (value === undefined) {
+            return;
+        }
+        process.stdout.write(value.toString());
         process.stdout.write(' ');
     });
     state.addWord('dup', (s) => {
@@ -201,9 +205,16 @@ function initializeBuiltinWords(state) {
         state.addWord(nextWord, state => state.push(value));
     });
     state.addWord('variable', (state) => {
+        //TODO implement
         let nextWord = state.getNextInputWord();
     });
-
+    state.addWord('\'', state => {
+        let nextWord = state.getNextInputWord();
+        let xt = state.getExecutionToken(nextWord);
+        if (xt !== undefined) {
+            state.push(xt);
+        }
+    });
     //store a value at an address
     state.addWord('!', (state) => {
         let address = state.pop();
