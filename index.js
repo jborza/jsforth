@@ -3,7 +3,10 @@ function createInitialState() {
         stack: [],
         dictionary: [],
         memory: [],
-        input: undefined,
+        input: undefined, //parser state
+        currentSymbolCode: undefined, //parser state
+        currentSymbolName: undefined, //parser state,
+        isCompileMode: false,
 
         push: function (x) { return this.stack.push(x) },
         pop: function () {
@@ -21,12 +24,17 @@ function createInitialState() {
                 if (nextToken === undefined) {
                     break;
                 }
-                this.evaluateToken(nextToken);
+                if (this.isCompileMode) {
+                    this.compileToken(nextToken);
+                }
+                else {
+                    this.interpretToken(nextToken);
+                }
             }
             process.stdout.write('\n')
         },
 
-        evaluateToken: function (token) {
+        interpretToken: function (token) {
             if (typeof (token) === 'function') {
                 token(state);
                 return;
@@ -39,7 +47,15 @@ function createInitialState() {
                     word.code(this);
                 }
                 else {
-                    evaluateTokens(this, word.code);
+                    if (Array.isArray(word.code)) {
+                        for (f of word.code) {
+                            f(this);
+                        }
+                    }
+                    else {
+                        console.log('dunno what to do!');
+                    }
+                    //evaluateTokens(this, word.code);
                 }
                 return;
             }
@@ -52,6 +68,35 @@ function createInitialState() {
             else {
                 //push the new token
                 this.stack.push(parsed);
+            }
+            return true;
+        },
+
+        //TODO merge with interpretToken (same structure, different 'hooks' of what to do with a word or a symbol)
+        compileToken: function (token) {
+            //When the interpreter finds a word, it looks the word up in the dictionary.
+            const word = this.findWord(token);
+            if (word !== undefined) {
+                if (word.immediate) {
+                    //execute immediate words
+                    word.code(this);
+                }
+                else {
+                    // compile a definition for this word
+                    let xt = this.getExecutionToken(token);
+                    this.currentSymbolCode.push(xt);
+                }
+                return;
+            }
+            //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
+            const parsed = parseInt(token);
+            if (isNaN(parsed)) {
+                console.log(token + ' ?');
+                return false;
+            }
+            else {
+                //push the code to push the number to the stack
+                this.currentSymbolCode.push((state) => state.push(parsed));
             }
             return true;
         },
@@ -75,10 +120,11 @@ function createInitialState() {
             return word;
         },
 
-        addWord: function (name, code) {
+        addWord: function (name, code, immediate = false) {
             word = {
                 name: name,
-                code: code
+                code: code,
+                immediate: immediate
             };
             this.dictionary.unshift(word);
         },
@@ -106,6 +152,12 @@ function createInitialState() {
             else {
                 evaluateTokens(this, word.code);
             }
+        },
+        ensureCompileMode: function () {
+            if (!this.isCompileMode) {
+                console.log('Interpreting a compile-only word');
+            }
+            return this.isCompileMode;
         }
     };
 }
@@ -254,6 +306,17 @@ function initializeBuiltinWords(state) {
         print(word);
     });
 
+    state.addWord(':', state => {
+        if (state.isCompileMode) {
+            console.log('Cannot have nested definitions with :');
+            return;
+        }
+        state.isCompileMode = true;
+        state.currentSymbolCode = [];
+        let name = state.getNextInputWord();
+        state.currentSymbolName = name;
+    });
+
     state.addWord('1+', ['1', '+']);
     state.addWord('1-', ['1', '-']);
     state.addWord('2+', ['2', '+']);
@@ -275,9 +338,21 @@ function initializeBuiltinWords(state) {
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.words));
     state.addWord('???', (state) => console.log(state.memory));
+
+    // compile mode tokens
+    state.addWord(';', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+
+        state.addWord(state.currentSymbolName, state.currentSymbolCode);
+        state.currentSymbolCode = undefined;
+        state.currentSymbolName = undefined;
+        state.isCompileMode = false;
+    }, true);
 }
 
-function print(x){
+function print(x) {
     process.stdout.write(x);
 }
 
@@ -305,49 +380,6 @@ function canAccept(state, token) {
         return true;
     }
 }
-
-function evaluateWordDefinition(state, tokens) {
-    //TODO convert to a function
-    //TODO conditionals: if ... then | if ... else ... then
-    // -  Conditionals in Forth can only be used inside definitions. 
-    //DO .. LOOP: remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
-    //+LOOP pops the increment from the stack, e.g. 0 10 do i . -1 +loop
-    //eat words and store a function definition
-    let body = [];
-    let name = tokens.shift();
-    if (name == undefined)
-        return;
-    while (tokens.length > 0) {
-        let token = tokens.shift();
-        if (token == ';') {
-            //end word definition
-            state.addWord(name, body);
-            return;
-        }
-        let word = state.getExecutionToken(token);
-        if (word !== undefined) {
-            //pick up the execution token
-            body.push(word.code);
-            continue;
-        }
-        //pick up the execution token
-        const parsed = parseInt(token);
-        if (isNaN(parsed)) {
-            console.log(token + ' ?');
-            return false;
-        }
-        else {
-            //push the new token
-            body.push(parsed);
-        }
-    }
-}
-
-//     if (token == ':') {
-//         //TODO triger compilation mode
-//         evaluateWordDefinition(state, tokens);
-//         return;
-//     }
 
 function repl() {
     let stdin = process.openStdin();
