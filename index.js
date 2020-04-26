@@ -84,7 +84,7 @@ function createInitialState() {
                 else {
                     // compile a definition for this word
                     let xt = this.getExecutionToken(token);
-                    this.currentSymbolCode.push(xt);
+                    this.currentSymbolCode.push(word.code);
                 }
                 return;
             }
@@ -317,22 +317,7 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = name;
     });
 
-    state.addWord('1+', ['1', '+']);
-    state.addWord('1-', ['1', '-']);
-    state.addWord('2+', ['2', '+']);
-    state.addWord('2-', ['2', '-']);
-    state.addWord('2*', ['2', '*']);
-    state.addWord('2/', ['2', '/']);
-    state.addWord('2drop', ['drop', 'drop']);
-    state.addWord('2dup', ['dup', 'dup']);
-    state.addWord('0<', ['0', '<']);
-    state.addWord('0>', ['0', '>']);
-    state.addWord('0=', ['0', '=']);
-    state.addWord('true', ['-1']);
-    state.addWord('false', ['0']);
-
-
-    state.addWord('?', ['@', '.']); //? is defined as @ .
+    
     //state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
     // state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
@@ -350,6 +335,30 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
     }, true);
+}
+
+function initializeForthWords(state) {
+    let initCode = `
+    -1 constant true
+    0 constant false
+    : 1+ 1 + ;
+    : 1- 1 - ;
+    : ? @ . ;
+    : 1+   1 + ;
+    : 1-   1 - ;
+    : 2+   2 + ;
+    : 2-   2 - ;
+    : 2*   2 * ;
+    : 2/   2 / ;
+    : 2drop drop drop ;
+    : 2dup dup dup ;
+    : 0<   0 < ;
+    : 0>   0 > ;
+    : 0=   0 = ;
+    `;
+    for(line of initCode.split('\n')){
+        state.evaluateLine(line.trim());
+    }
 }
 
 function print(x) {
@@ -385,6 +394,7 @@ function repl() {
     let stdin = process.openStdin();
     let state = createInitialState();
     initializeBuiltinWords(state);
+    initializeForthWords(state);
     if (process.argv.includes('/noprompt') === false) {
         console.log('? ')
     }
