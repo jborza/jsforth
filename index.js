@@ -205,8 +205,10 @@ function initializeBuiltinWords(state) {
         state.addWord(nextWord, state => state.push(value));
     });
     state.addWord('variable', (state) => {
-        //TODO implement
         let nextWord = state.getNextInputWord();
+        state.memory.push(0);
+        let index = state.memory.length - 1;
+        state.addWord(nextWord, state=>state.push(index));
     });
     state.addWord('\'', state => {
         let nextWord = state.getNextInputWord();
@@ -226,10 +228,17 @@ function initializeBuiltinWords(state) {
         state.push(state.memory[address]);
     });
 
+    state.addWord('+!', state => {
+        //TODO could be implemented in forth?
+        let address = state.pop();
+        let value = state.pop();
+        state.memory[address] += value;
+    });
+
     //comment word
     state.addWord('(', state => {
         let word = state.getNextDelimitedWord(')');
-        //discard word;
+        //do nothing - discard word
     });
 
 

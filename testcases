@@ -26,14 +26,6 @@
 # constant redefinition
 42 constant answer 43 constant answer answer . <- 43
 
-# load and store
-42 0 ! 0 ? <- 42
-42 0 ! 0 @ . <- 42
-
-# variables load and store
-variable aaa 99 aaa ! aaa @ . <- 99
-
-
 #comparisons and binary operators
 
 3 4 < . <- -1
@@ -58,6 +50,14 @@ variable aaa 99 aaa ! aaa @ . <- 99
 4 3 mod . <- 1
 5 3 mod . <- 2
 10 5 mod 0 = . <- -1
+
+# load and store
+42 0 ! 0 @ . <- 42
+42 0 ! 0 ? <- 42
+
+# variables load and store
+variable aaa 99 aaa ! aaa @ . <- 99
+variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 
 # execution token basic
 99 ' . execute <- 99

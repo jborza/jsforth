@@ -18,14 +18,10 @@ or easier - always a list and it can include a native function?
 https://www.forth.com/starting-forth/9-forth-execution/
 
 TODO:
-- constant
-- variable
 - do .. loop
 - do .. loop+
-- ! //stores a value at the memory location referenced by a variable
-- @ // fetches the value from a memory location
-- +! // The word +! is used to increase the value of a variable by a certain amount (like += in C-based languages).
 - ? (addr -) // displays the contents of a variable
+- :noname
 
 The parser should be available to the words. 
 
