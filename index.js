@@ -17,21 +17,27 @@ function createInitialState() {
             return x;
         },
 
-        evaluateLine: function (line) {
+        evaluateLine: function (line, printLF = true) {
             this.input = line;
             while (this.input !== undefined) {
                 let nextToken = this.getNextInputWord();
                 if (nextToken === undefined) {
                     break;
                 }
-                if (this.isCompileMode) {
-                    this.compileToken(nextToken);
-                }
-                else {
-                    this.interpretToken(nextToken);
-                }
+                this.evaluateToken(nextToken);
             }
-            process.stdout.write('\n')
+            if(printLF){
+                process.stdout.write('\n')
+            }
+        },
+
+        evaluateToken: function(token){
+            if (this.isCompileMode) {
+                this.compileToken(token);
+            }
+            else {
+                this.interpretToken(token);
+            }
         },
 
         interpretToken: function (token) {
@@ -344,20 +350,22 @@ function initializeForthWords(state) {
     : 1+ 1 + ;
     : 1- 1 - ;
     : ? @ . ;
-    : 1+   1 + ;
-    : 1-   1 - ;
-    : 2+   2 + ;
-    : 2-   2 - ;
-    : 2*   2 * ;
-    : 2/   2 / ;
+    : 1+ 1 + ;
+    : 1- 1 - ;
+    : 2+ 2 + ;
+    : 2- 2 - ;
+    : 2* 2 * ;
+    : 2/ 2 / ;
     : 2drop drop drop ;
     : 2dup dup dup ;
-    : 0<   0 < ;
-    : 0>   0 > ;
-    : 0=   0 = ;
+    : 0< 0 < ;
+    : 0> 0 > ;
+    : 0= 0 = ;
     `;
     for(line of initCode.split('\n')){
-        state.evaluateLine(line.trim());
+        if(line.trim().length == 0)
+            continue;
+        state.evaluateLine(line.trim(), false);
     }
 }
 
