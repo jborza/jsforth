@@ -1,6 +1,7 @@
 function createInitialState() {
     return {
         stack: [],
+        returnStack: [],
         dictionary: [],
         memory: [],
         input: undefined, //parser state
@@ -66,7 +67,6 @@ function createInitialState() {
                 if (word.immediate) {
                     //execute immediate words
                     this.executeWord(word);
-                    // word.code(this);
                 }
                 else {
                     // compile a definition for this word
@@ -231,6 +231,9 @@ function initializeBuiltinWords(state) {
         process.stdout.write(String.fromCharCode(c));
     });
     state.addWord('.s', (state) => console.log(state.stack));
+    state.addWord('.r', (state) => console.log(state.returnStack));
+    state.addWord('r>', state=>state.stack.push(state.returnStack.pop()));
+    state.addWord('>r', state=>state.returnStack.push(state.stack.pop()));
     state.addWord('execute', (state) => {
         let word = state.pop();
         state.executeWord(word);
@@ -323,7 +326,6 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = name;
     });
 
-
     // state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
     // state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
@@ -341,6 +343,14 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
     }, true);
+    state.addWord('if', state=>{
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        //do stuff until else or then
+        let condition = state.pop();
+
+    })
 
     // state.addWord('compile-only-error', state=>{
 

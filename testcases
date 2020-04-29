@@ -54,6 +54,9 @@
 5 3 mod . <- 2
 10 5 mod 0 = . <- -1
 
+# return stack
+1 2 >r >r r> r> . . <- 2 1
+
 # load and store
 42 0 ! 0 @ . <- 42
 42 0 ! 0 ? <- 42
