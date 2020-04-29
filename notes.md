@@ -9,6 +9,8 @@
 - begin ... until / again / repeat / leave
 - begin ... again
 - begin ... while ... repeat
+- arrays
+- dictionaries?
 
 # notes 
 
@@ -51,3 +53,13 @@ Words like : – words that advance the value of >IN and so prevent the text int
 also, there is "state" keeping track of the current itnerpreter state. not really isCompileMode
 
 In ANS Forth, the current state of the interpreter can be read from the flag STATE which contains the value true when in compilation state and false otherwise. This allows the implementation of so-called state-smart words with behavior that changes according to the current state of the interpreter.
+
+# the second stack?
+
+http://www.forth.org/svfig/Len/softstak.htm
+
+When a word is invoked, the inner interpreter puts the next address on the return stack. When the word is completed the top item on the return stack is popped into a register called ip (instruction pointer), and execution continues from there. Most Forths that run on Intel machines use the BP register for ip.
+
+https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/Return-Stack-Tutorial.html
+
+>r takes an element from the data stack and pushes it onto the return stack; conversely, r> moves an elementm from the return to the data stack; r@ pushes a copy of the top of the return stack on the data stack.
