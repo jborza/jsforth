@@ -4,9 +4,11 @@
 - do .. loop remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
 - do .. loop+ pops the increment from the stack, e.g. 0 10 do i . -1 +loop
 - if ... then | if ... else ... then
-- ? (addr -) // displays the contents of a variable
 - :noname
 - state - should be true (compile) or false (interpreting) state
+- begin ... until / again / repeat / leave
+- begin ... again
+- begin ... while ... repeat
 
 # notes 
 
