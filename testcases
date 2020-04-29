@@ -71,6 +71,9 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 1 : dup2 dup ; 2 dup2 . . <- 2 2
 : three 3 3 3 ; three . . . <- 3 3 3
 
+#execution tokens to user-defined functions
+: ninetynine 99 ; ' ninetynine execute . <- 99
+
 #function redefinition
 
 1 : drop dup ; drop . . <- 1 1
@@ -85,8 +88,7 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 : hello ." hello world" ; : doublehello hello hello ; : hello ." new hello" ; doublehello <- hello worldhello world
 
 #unnamed execution tokens
-:noname 1 ; <- leaves an execution token
-
+:noname 1 ; execute . <- 1
 
 # see
 

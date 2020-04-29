@@ -26,12 +26,12 @@ function createInitialState() {
                 }
                 this.evaluateToken(nextToken);
             }
-            if(printLF){
+            if (printLF) {
                 process.stdout.write('\n')
             }
         },
 
-        evaluateToken: function(token){
+        evaluateToken: function (token) {
             if (this.isCompileMode) {
                 this.compileToken(token);
             }
@@ -42,23 +42,7 @@ function createInitialState() {
 
         interpretToken: function (token) {
             //When the interpreter finds a word, it looks the word up in the dictionary.
-            const word = this.findWord(token);
-            if (word !== undefined) {
-                //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
-                if (typeof (word.code) === 'function') {
-                    word.code(this);
-                }
-                else {
-                    if (Array.isArray(word.code)) {
-                        for (f of word.code) {
-                            f(this);
-                        }
-                    }
-                    else {
-                        console.log('dunno what to do!');
-                    }
-                    //evaluateTokens(this, word.code);
-                }
+            if (this.callWord(token)) {
                 return;
             }
             //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
@@ -81,7 +65,8 @@ function createInitialState() {
             if (word !== undefined) {
                 if (word.immediate) {
                     //execute immediate words
-                    word.code(this);
+                    this.executeWord(word);
+                    // word.code(this);
                 }
                 else {
                     // compile a definition for this word
@@ -123,9 +108,11 @@ function createInitialState() {
         },
 
         addWord: function (name, code, immediate = false) {
+            let wordCode = [];
+            wordCode = wordCode.concat(code);
             word = {
                 name: name,
-                code: code,
+                code: wordCode,
                 immediate: immediate
             };
             this.dictionary.unshift(word);
@@ -147,19 +134,40 @@ function createInitialState() {
             }
             return undefined;
         },
-        execute: function (word) {
-            if (typeof (word.code) === 'function') {
-                word.code(this);
-            }
-            else {
-                evaluateTokens(this, word.code);
-            }
-        },
         ensureCompileMode: function () {
             if (!this.isCompileMode) {
                 console.log('Interpreting a compile-only word');
             }
             return this.isCompileMode;
+        },
+        makeVariable: function (name) {
+            this.memory.push(0);
+            let index = this.memory.length - 1;
+            this.addWord(name, state => state.push(index));
+        },
+        reset: function () {
+            this.stack = [];
+            this.memory = [];
+            this.makeVariable('state');
+        },
+        callWord: function (wordName) {
+            const word = this.findWord(wordName);
+            if (word !== undefined) {
+                //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+                this.executeWord(word);
+                return true;
+            }
+            return false;
+        },
+        executeWord: function (word) {
+            if (Array.isArray(word.code)) {
+                for (f of word.code) {
+                    f(this);
+                }
+            }
+            else {
+                console.log('Unexpected format of code for word '+word+'!');
+            }
         }
     };
 }
@@ -225,7 +233,7 @@ function initializeBuiltinWords(state) {
     state.addWord('.s', (state) => console.log(state.stack));
     state.addWord('execute', (state) => {
         let word = state.pop();
-        state.execute(word);
+        state.executeWord(word);
     });
     state.addWord('>', (state) => {
         state.push(booleanToForthFlag(state.pop() < state.pop()));
@@ -259,9 +267,7 @@ function initializeBuiltinWords(state) {
     });
     state.addWord('variable', (state) => {
         let nextWord = state.getNextInputWord();
-        state.memory.push(0);
-        let index = state.memory.length - 1;
-        state.addWord(nextWord, state => state.push(index));
+        state.makeVariable(nextWord);
     });
     state.addWord('\'', state => {
         let nextWord = state.getNextInputWord();
@@ -317,8 +323,8 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = name;
     });
 
-    
-    //state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
+
+    // state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
     // state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.dictionary));
@@ -335,6 +341,10 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
     }, true);
+
+    // state.addWord('compile-only-error', state=>{
+
+    // })
 }
 
 function initializeForthWords(state) {
@@ -358,8 +368,8 @@ function initializeForthWords(state) {
     13 constant newline
     : cr newline emit ;
     `;
-    for(line of initCode.split('\n')){
-        if(line.trim().length == 0)
+    for (line of initCode.split('\n')) {
+        if (line.trim().length == 0)
             continue;
         state.evaluateLine(line.trim(), false);
     }
@@ -373,30 +383,10 @@ function booleanToForthFlag(boolean) {
     return boolean ? -1 : 0;
 }
 
-function evaluateTokens(state, tokens) {
-    while (tokens.length > 0) {
-        if (evaluateToken(state, tokens) === false)
-            break;
-    }
-}
-
-function canAccept(state, token) {
-    if (token in state.words) {
-        return true;
-    }
-    const parsed = parseInt(token);
-    if (isNaN(parsed)) {
-        console.log(token + ' ?');
-        return false;
-    }
-    else {
-        return true;
-    }
-}
-
 function repl() {
     let stdin = process.openStdin();
     let state = createInitialState();
+    state.reset();
     initializeBuiltinWords(state);
     initializeForthWords(state);
     if (process.argv.includes('/noprompt') === false) {
