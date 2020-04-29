@@ -1,0 +1,22 @@
+{
+  "name": "jsforth",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "python3 test.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jborza/jsforth.git"
+  },
+  "keywords": [
+    "forth"
+  ],
+  "author": "jborza",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jborza/jsforth/issues"
+  },
+  "homepage": "https://github.com/jborza/jsforth#readme"
+}
