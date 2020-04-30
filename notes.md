@@ -63,3 +63,59 @@ When a word is invoked, the inner interpreter puts the next address on the retur
 https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/Return-Stack-Tutorial.html
 
 >r takes an element from the data stack and pushes it onto the return stack; conversely, r> moves an elementm from the return to the data stack; r@ pushes a copy of the top of the return stack on the data stack.
+
+# if
+
+During compilation, the data stack is used to support control structure balancing, nesting, and back-patching of branch addresses. The snippet:
+
+ ... DUP 6 < IF DROP 5 ELSE 1 - THEN ...
+
+would be compiled to the following sequence inside a definition:
+
+ ... DUP LIT 6 < ?BRANCH 5  DROP LIT 5  BRANCH 3  LIT 1 - ...
+
+The numbers after BRANCH represent relative jump addresses. LIT is the primitive word for pushing a "literal" number onto the data stack.
+
+# CREATE ... DOES >
+
+http://galileo.phys.virginia.edu/classes/551.jvn.fall01/primer.htm
+
+       a. Defining “defining” words 
+
+       CREATE finds its most important use in extending the powerful class of 
+       Forth words called “defining” words. The colon compiler  ":"  is such 
+       a word, as are VARIABLE and CONSTANT. 
+
+       The definition of VARIABLE in high-level Forth is simple 
+
+           : VARIABLE  CREATE   1 CELLS  ALLOT ;
+
+       We have already seen how VARIABLE is used in a program. (An altern-
+       ative definition found in some Forths is
+
+           : VARIABLE  CREATE   0  ,  ;
+
+       —these variables are initialized to 0.)
+
+https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/CREATE_002e_002eDOES_003e-details.html
+
+The word , ("comma") puts TOS (top of the stack?) into the next cell of the dic-
+           tionary and increments the dictionary pointer by that number of
+           bytes.
+
+The word , takes a number off the stack and stores it into the array. So each time you express a number and follow it with ,, you add one cell to the array.
+
+Reserve one cell of data space and store x in the cell. If the data-space pointer is aligned when , begins execution, it will remain aligned when , finishes execution. An ambiguous condition exists if the data-space pointer is not aligned prior to execution of ,.
+
+https://forth-standard.org/standard/core/CREATE
+
+https://softwareengineering.stackexchange.com/questions/339283/forth-how-do-create-and-does-work-exactly
+
+an implementation of forth words:
+https://github.com/philburk/pforth/blob/master/fth/system.fth
+
+: ALLOT ( nbytes -- , allot space in dictionary ) dp +! ( align ) ;
+
+The word , takes a number off the stack and stores it into the array. So each time you express a number and follow it with ,, you add one cell to the array.
+
+so my implementation of here is probably bad...

@@ -18,6 +18,10 @@ function createInitialState() {
             return x;
         },
 
+        peek: function (offset, stack) {
+            return stack[stack.length - offset];
+        },
+
         evaluateLine: function (line, printLF = true) {
             this.input = line;
             while (this.input !== undefined) {
@@ -166,11 +170,11 @@ function createInitialState() {
                 }
             }
             else {
-                console.log('Unexpected format of code for word '+word+'!');
+                console.log('Unexpected format of code for word ' + word + '!');
             }
         },
-        allot: function(cells){
-            let newCells = [...Array(cells)].map(_=>0);
+        allot: function (cells) {
+            let newCells = [...Array(cells)].map(_ => 0);
             this.memory.push(...newCells);
         }
     };
@@ -236,8 +240,8 @@ function initializeBuiltinWords(state) {
     });
     state.addWord('.s', (state) => console.log(state.stack));
     state.addWord('.r', (state) => console.log(state.returnStack));
-    state.addWord('r>', state=>state.stack.push(state.returnStack.pop()));
-    state.addWord('>r', state=>state.returnStack.push(state.stack.pop()));
+    state.addWord('r>', state => state.stack.push(state.returnStack.pop()));
+    state.addWord('>r', state => state.returnStack.push(state.stack.pop()));
     state.addWord('execute', (state) => {
         let word = state.pop();
         state.executeWord(word);
@@ -347,20 +351,31 @@ function initializeBuiltinWords(state) {
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
     }, true);
-    state.addWord('if', state=>{
+    state.addWord('if', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
         //do stuff until else or then
         let condition = state.pop();
     })
-    state.addWord('here', state=>{
+    state.addWord('here', state => {
         state.push(state.memory.length);
     })
-    state.addWord('allot', state=>{
+    state.addWord('allot', state => {
         state.allot(state.pop());
     });
-
+    state.addWord('i', state => {
+        state.push(state.peek(1, returnStack));
+    });
+    state.addWord('j', state => {
+        state.push(state.peek(1, returnStack));
+    });
+    state.addWord('create', state => {
+        //???
+        let nextWord = state.getNextInputWord();
+        //similar to this.addWord()
+        state.addWord(nextWord, []);
+    });
     // state.addWord('compile-only-error', state=>{
 
     // })
@@ -387,6 +402,7 @@ function initializeForthWords(state) {
     13 constant newline
     : cr newline emit ;
     : cells 1 * ;
+    : cell 1 ;
     `;
     for (line of initCode.split('\n')) {
         if (line.trim().length == 0)
