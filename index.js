@@ -168,6 +168,10 @@ function createInitialState() {
             else {
                 console.log('Unexpected format of code for word '+word+'!');
             }
+        },
+        allot: function(cells){
+            let newCells = [...Array(cells)].map(_=>0);
+            this.memory.push(...newCells);
         }
     };
 }
@@ -349,8 +353,13 @@ function initializeBuiltinWords(state) {
         }
         //do stuff until else or then
         let condition = state.pop();
-
     })
+    state.addWord('here', state=>{
+        state.push(state.memory.length);
+    })
+    state.addWord('allot', state=>{
+        state.allot(state.pop());
+    });
 
     // state.addWord('compile-only-error', state=>{
 
@@ -371,12 +380,13 @@ function initializeForthWords(state) {
     : 2* 2 * ;
     : 2/ 2 / ;
     : 2drop drop drop ;
-    : 2dup dup dup ;
+    : 2dup over over ;
     : 0< 0 < ;
     : 0> 0 > ;
     : 0= 0 = ;
     13 constant newline
     : cr newline emit ;
+    : cells 1 * ;
     `;
     for (line of initCode.split('\n')) {
         if (line.trim().length == 0)
