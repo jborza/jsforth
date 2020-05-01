@@ -99,9 +99,7 @@ http://galileo.phys.virginia.edu/classes/551.jvn.fall01/primer.htm
 
 https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/CREATE_002e_002eDOES_003e-details.html
 
-The word , ("comma") puts TOS (top of the stack?) into the next cell of the dic-
-           tionary and increments the dictionary pointer by that number of
-           bytes.
+The word , ("comma") puts TOS (top of the stack?) into the next cell of the dictionary and increments the dictionary pointer by that number of bytes.
 
 The word , takes a number off the stack and stores it into the array. So each time you express a number and follow it with ,, you add one cell to the array.
 
@@ -119,3 +117,36 @@ https://github.com/philburk/pforth/blob/master/fth/system.fth
 The word , takes a number off the stack and stores it into the array. So each time you express a number and follow it with ,, you add one cell to the array.
 
 so my implementation of here is probably bad...
+
+CREATE does not take anything from the stack or return anything. It parses a word from the input and makes a dictionary entry for it. 
+- It does fill in the code for the newly-created word with standard boilerplate code that pushes an aligned address on the stack and simply returns 
+- (the same aligned address that subsequent "," (comma) calls would fill in with data). 
+
+Therefore, we could define (initialized) VARIABLE as:
+
+: VARIABLE CREATE 0 , ;
+
+## comma
+
+comma is implemented in gforth as:
+
+`
+see ,
+: ,
+  here cell allot ! ; ok
+`
+
+## here 
+
+// here is implemented as "dp @"
+// dp is a dictionary pointer? global?
+// see https://comp.lang.forth.narkive.com/IyPdVBcu/why-dp-is-a-user-variable-in-some-forth-systems
+
+//also, according to https://stackoverflow.com/questions/25630434/how-do-i-control-where-new-forth-words-will-be-compiled
+// HERE isn't necessarily where new words will be compiled. HERE points to data space, whereas definitions are written to name space and code space. However, in a traditional design like Gforth, the three are a single contiguous region. See DPANS94 3.3.
+
+
+
+# stack inspection
+
+https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/Examining.html
