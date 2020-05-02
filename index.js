@@ -116,6 +116,7 @@ function createInitialState() {
                 immediate: immediate
             };
             this.dictionary.unshift(word);
+            return word;
         },
         getExecutionToken: function(name) {
             const word = this.findWord(name);
@@ -333,6 +334,15 @@ function initializeBuiltinWords(state) {
         let name = state.getNextInputWord();
         state.currentSymbolName = name;
     });
+    state.addWord(':noname', state => {
+        if (state.isCompileMode) {
+            console.log('Cannot have nested definitions with :');
+            return;
+        }
+        state.isCompileMode = true;
+        state.currentSymbolCode = [];
+        state.currentSymbolName = '';
+    });
 
     // state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
     // state.addWord('invert', ['-1', '*', '1', '-'])
@@ -346,10 +356,15 @@ function initializeBuiltinWords(state) {
             return;
         }
 
-        state.addWord(state.currentSymbolName, state.currentSymbolCode);
+        let wasAnonymousWord = state.currentSymbolName === '';
+        let xt = state.addWord(state.currentSymbolName, state.currentSymbolCode);
         state.currentSymbolCode = undefined;
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
+        if(wasAnonymousWord)
+        {
+            state.push(xt);
+        }
     }, true);
     state.addWord('if', state => {
         if (!state.ensureCompileMode()) {
@@ -404,6 +419,7 @@ function initializeForthWords(state) {
     : 2/ 2 / ;
     : 2drop drop drop ;
     : 2dup over over ;
+    : nip swap drop ;
     : 0< 0 < ;
     : 0> 0 > ;
     : 0= 0 = ;
