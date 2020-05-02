@@ -315,8 +315,13 @@ function initializeBuiltinWords(state) {
 
     state.addWord('.\"', state => {
         let word = state.getNextDelimitedWord('\"');
-        print(word);
-    });
+        if(state.isCompileMode){
+            state.currentSymbolCode.push((state) => print(word));
+        }
+        else{
+            print(word);
+        }
+    }, true);
 
     state.addWord(':', state => {
         if (state.isCompileMode) {
@@ -363,7 +368,7 @@ function initializeBuiltinWords(state) {
         state.push(state.peek(1, returnStack));
     });
     state.addWord('j', state => {
-        state.push(state.peek(1, returnStack));
+        state.push(state.peek(2, returnStack));
     });
     state.addWord('create', state => {
         //???
@@ -373,11 +378,12 @@ function initializeBuiltinWords(state) {
         // It does fill in the code for the newly-created word with standard boilerplate code that 
         // pushes an aligned address on the stack and simply returns
     });
-    state.addWord(',', state => {
-        //append top of the stack to the next cell of the dictionary
-        let tos = state.pop();
-        //append it to ... top word code?
-    });
+    // state.addWord(',', state => {
+    //     //append top of the stack to the next cell of the dictionary
+    //     let tos = state.pop();
+    //     //append it to ... top word code?
+
+    // });
     // state.addWord('compile-only-error', state=>{
 
     // })
