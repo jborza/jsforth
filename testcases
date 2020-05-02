@@ -6,6 +6,9 @@
 1 2 3 4 . . . <- 4 3 2
 65 emit <- A
 
+# print words
+." hello" <- hello
+
 # comments
 1 ( comment 2 . ) . <- 1
 ( ) 9 . <- 9
@@ -75,6 +78,9 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 1 : dup2 dup ; 2 dup2 . . <- 2 2
 : three 3 3 3 ; three . . . <- 3 3 3
 
+#print words in a function
+: hi ." hello" ; hi <- hello
+
 #execution tokens to user-defined functions
 : ninetynine 99 ; ' ninetynine execute . <- 99
 
@@ -96,4 +102,4 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 
 # see
 
-: 3dup dup dup dup ; see 3dup <- dup dup dup
+#: 3dup dup dup dup ; see 3dup <- dup dup dup

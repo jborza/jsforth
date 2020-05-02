@@ -18,8 +18,10 @@ with open(filename,'r') as f:
         print(f'code:  {input}')
         print(f'expected: {expected}')
 
+        #quote quotes
+        input = input.replace('"', '\\"')
 
-        cmd = f'echo "{input}" | nodejs index.js /noprompt'
+        cmd = f'echo "{input}" | node index.js /noprompt'
         result = subprocess.getoutput(cmd).strip()
         print(f'actual: {result}')
         if(expected != result):
