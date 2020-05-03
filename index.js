@@ -35,7 +35,6 @@ function createInitialState() {
         dictionary: [],
         memory: [],
         input: undefined, //parser state
-        currentSymbolCode: undefined, //parser state
         currentSymbolName: undefined, //parser state,
         isCompileMode: false,
         currentSymbolStack: stack(), //stack of control structures we append words to
@@ -93,7 +92,7 @@ function createInitialState() {
                 } else {
                     // compile a definition for this word
                     let xt = this.getExecutionToken(token);
-                    this.currentSymbolCode = this.currentSymbolCode.concat(word.code);
+                    this.compileNextCall(word.code);
                 }
                 return;
             }
@@ -104,7 +103,7 @@ function createInitialState() {
                 return false;
             } else {
                 //push the code to push the number to the stack
-                this.currentSymbolCode.push((state) => state.push(parsed));
+                this.compileNextCall(state=>state.push(parsed));
             }
             return true;
         },
@@ -133,6 +132,7 @@ function createInitialState() {
             return word;
         },
 
+        //add a word to the dictionary
         addWord: function (name, code, immediate = false) {
             let wordCode = [];
             wordCode = wordCode.concat(code);
@@ -198,6 +198,15 @@ function createInitialState() {
         allot: function (cells) {
             let newCells = [...Array(cells)].map(_ => 0);
             this.memory.push(...newCells);
+        },
+        startNewWordDefininion: function(name){
+            if (this.isCompileMode) {
+                console.log('Cannot have nested definitions with :');
+                return;
+            }
+            this.isCompileMode = true;
+            this.currentSymbolStack.push(stack());
+            this.currentSymbolName = name;
         }
     };
 }
@@ -343,7 +352,7 @@ function initializeBuiltinWords(state) {
     state.addWord('.\"', state => {
         let word = state.getNextDelimitedWord('\"');
         if (state.isCompileMode) {
-            state.currentSymbolCode.push((state) => print(word));
+            state.compileNextCall((state) => print(word))
         }
         else {
             print(word);
@@ -351,27 +360,13 @@ function initializeBuiltinWords(state) {
     }, true);
 
     state.addWord(':', state => {
-        if (state.isCompileMode) {
-            console.log('Cannot have nested definitions with :');
-            return;
-        }
-        state.isCompileMode = true;
-        state.currentSymbolCode = [];
         let name = state.getNextInputWord();
-        state.currentSymbolName = name;
+        state.startNewWordDefininion(name);
     });
     state.addWord(':noname', state => {
-        if (state.isCompileMode) {
-            console.log('Cannot have nested definitions with :');
-            return;
-        }
-        state.isCompileMode = true;
-        state.currentSymbolCode = [];
-        state.currentSymbolName = '';
+        state.startNewWordDefininion('');
     });
 
-    // state.addWord('invert', (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * 1 - ;
-    // state.addWord('invert', ['-1', '*', '1', '-'])
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.dictionary));
     state.addWord('???', (state) => console.log(state.memory));
@@ -383,21 +378,21 @@ function initializeBuiltinWords(state) {
         }
 
         let wasAnonymousWord = state.currentSymbolName === '';
-        let xt = state.addWord(state.currentSymbolName, state.currentSymbolCode);
-        state.currentSymbolCode = undefined;
+        let currentSymbolCode = state.currentSymbolStack.pop();
+        let xt = state.addWord(state.currentSymbolName, currentSymbolCode.stack);
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
         if (wasAnonymousWord) {
             state.push(xt);
         }
     }, true);
-    state.addWord('if', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
-        //do stuff until else or then
-        let condition = state.pop();
-    }, true)
+    // state.addWord('if', state => {
+    //     if (!state.ensureCompileMode()) {
+    //         return;
+    //     }
+    //     //do stuff until else or then
+    //     let condition = state.pop();
+    // }, true)
     state.addWord('here', state => {
         state.push(state.memory.length);
     })
@@ -436,22 +431,35 @@ function initializeBuiltinWords(state) {
         //TODO jump
         //destination is in the next cell
     });
+    //inner helper for the 'do' call
+    state.addWord('_do', state=>{
+        let start = state.pop();
+        //push i/j to return stack, so it can be retrieved as 'i'
+        state.returnStack.push(start);
+    });
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
+        // loop symbol code on the symbol stack
+        state.currentSymbolStack.push(stack());
         //do we consume words until loop/loop+? 
-        state.currentSymbolCode.push((state) => {
-            let start = state.pop();
+        state.compileToken('_do');
+        // state.currentSymbolCode.push((state) => {
+        state.compileNextCall(state=>{
+            //TODO call inner "_do"
+            //let start = state.pop();
             //push i/j to return stack, so it can be retrieved as 'i'
-            state.returnStack.push(start);
+            //state.returnStack.push(start);
+
         });
     }, true);
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
-        state.currentSymbolCode.push((state) => {
+        let currentSymbolCode = state.currentSymbolStack.pop();
+        state.compileNextCall(state=>{
             //increment number on the top of the return stack
             let loopCounter = state.returnStack.pop();
             loopCounter++;
