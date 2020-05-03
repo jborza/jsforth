@@ -4,12 +4,11 @@
 - do .. loop remember that the words DO and LOOP are branching commands and that therefore they can only be executed inside a definition.
 - do .. loop+ pops the increment from the stack, e.g. 0 10 do i . -1 +loop
 - if ... then | if ... else ... then
-- :noname
+
 - state - should be true (compile) or false (interpreting) state
 - begin ... until / again / repeat / leave
 - begin ... again
 - begin ... while ... repeat
-- arrays
 - dictionaries?
 
 # notes 
@@ -136,6 +135,20 @@ see ,
   here cell allot ! ; ok
 `
 
+,             n  ---           ,                L0
+        Store n into the next available dictionary memory cell, advancing
+        the dictionary pointer. (comma)
+
+variable definition therefore comes down to
+
+create myvar <- creates dictionary entry; ' myvar pushes some address
+0  <- push the new value
+here <- push the here pointer
+cell allot <- push 1, allocate 1 cell, move dp forward by cell
+! <- store 0 at the here address
+
+
+
 ## here 
 
 // here is implemented as "dp @"
@@ -145,8 +158,39 @@ see ,
 //also, according to https://stackoverflow.com/questions/25630434/how-do-i-control-where-new-forth-words-will-be-compiled
 // HERE isn't necessarily where new words will be compiled. HERE points to data space, whereas definitions are written to name space and code space. However, in a traditional design like Gforth, the three are a single contiguous region. See DPANS94 3.3.
 
+Also:
+
+https://dwheeler.com/6502/fig-forth-glossary.txt says
+
+DP            ----  addr                      U,L
+        A user variable, the dictionary pointer, which contains the address
+        of the next free memory above the dictionary. The value may be read
+        by HERE and altered by ALLOT.
+
+
+, takes one item from the stack, and lays it down in the dictionary. The dictionary is an array of data where Forth puts data and code. Conceptually, there may be separate areas for code and data, but we'll not go into the details now. What matters is that there is a pointer to the end of the dictionary, called HERE. , stores data at this place, and advances the pointer.
 
 
 # stack inspection
 
 https://www.complang.tuwien.ac.at/forth/gforth/Docs-html/Examining.html
+
+# more links
+Forth in forth and assembler (wonderful reading):
+https://github.com/AlexandreAbreu/jonesforth/blob/master/jonesforth.f
+
+# branching
+
+Forward branching words (IF, AHEAD) leave an address on the stack. That's (conventionally) the normal data stack. The address points to (or near) the place in the compiled code that needs to be patched later.
+
+The resolving words (THEN, AGAIN) knows the target of the branch. They take the address from the stack and patch the branch.
+
+jonesforth:
+Word 0BRANCH emits branching instructions like test %rax,0; jz without actually putting offset in.
+
+Word BRANCH emits an uncondition jmp in the same way (just a 0xE9 opcode on x86).
+
+tldr: it is Forth, you already have a stack at hand so use it.
+
+# writing a forth
+https://www.sifflez.org/lectures/ASE/C3.pdf
