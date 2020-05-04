@@ -106,6 +106,7 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 
 # begin .. until loop
 : once begin 3 . true until ; once <- 3
+: twice 2 begin 1 - dup . dup 0= until ; twice <- 1 0
 0 : until-10 begin 1+ dup . dup 9 > until ; until-10 <- 1 2 3 4 5 6 7 8 9 10
 
 # do .. loop

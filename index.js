@@ -130,7 +130,6 @@ function createInitialState() {
                 this.input = undefined;
             return word;
         },
-
         //add a word to the dictionary
         addWord: function (name, code, immediate = false) {
             let wordCode = [];
@@ -303,7 +302,7 @@ function initializeBuiltinWords(state) {
     state.addWord('xor', (state) => {
         state.push(booleanToForthFlag(state.pop() ^ state.pop()));
     });
-    state.addWord('invert', state => state.push(~state.pop())); // (state) => state.push(state.pop() * -1 - 1)); // : invert -1 * -1 - ;
+    state.addWord('invert', state => state.push(~state.pop()));
     state.addWord('mod', state => {
         let a = state.pop();
         let b = state.pop();
@@ -470,53 +469,54 @@ function initializeBuiltinWords(state) {
         state.returnStack.push(start);
 
     });
+    state.addWord('_pushaddr', state => {
+        state.jumpStack.push(state.currentAddress);
+    });
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
         // loop symbol code on the symbol stack
-        state.currentSymbolStack.push(stack());
+        // state.currentSymbolStack.push(stack());
         //do we consume words until loop/loop+? 
-        state.compileToken('_do');
-        // state.currentSymbolCode.push((state) => {
-        state.compileNextCall(state => {
-            //TODO call inner "_do"
-            //let start = state.pop();
-            //push i/j to return stack, so it can be retrieved as 'i'
-            //state.returnStack.push(start);
-            //pick up this control structure's code
-            let start = state.pop();
-            //push i/j to return stack, so it can be retrieved as 'i'
-            state.returnStack.push(start);
+        //compile address placeholder for the do
 
-        });
+        state.compileToken('_do');
+        state.compileToken('_pushaddr');
+        // state.currentSymbolCode.push((state) => {
+        // state.compileNextCall(state => {
+        //     //TODO call inner "_do"
+        //     //let start = state.pop();
+        //     //push i/j to return stack, so it can be retrieved as 'i'
+        //     //state.returnStack.push(start);
+        //     //pick up this control structure's code
+        //     let start = state.pop();
+        //     //push i/j to return stack, so it can be retrieved as 'i'
+        //     state.returnStack.push(start);
+
+        // });
     }, true);
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
-        let currentSymbolCode = state.currentSymbolStack.pop().stack;
+        // let currentSymbolCode = state.currentSymbolStack.pop().stack;
         state.compileNextCall(state => {
             //increment number on the top of the return stack
-            do {
-                for (f of currentSymbolCode) {
-                    f(state);
-                }
+            let targetAddress = state.jumpStack.pop();
 
-                let loopCounter = state.returnStack.pop();
-                loopCounter++;
-                const loopLimit = state.pop();
-                if (loopCounter >= loopLimit) {
-                    //end the loop
-                    return;
-                }
-                //continue the loop, return counter and limit back
-                state.returnStack.push(loopCounter);
-                state.push(loopLimit);
-                //TODO jump back to the beginning - HOW?
-                //execute the body of the loop N times
+            let loopCounter = state.returnStack.pop();
+            loopCounter++;
+            const loopLimit = state.pop();
+            if (loopCounter >= loopLimit) {
+                //end the loop
+                return;
             }
-            while (true);
+            //continue the loop, return counter and limit back
+            state.returnStack.push(loopCounter);
+            state.push(loopLimit);
+            //TODO jump back to the beginning - HOW?
+            state.currentAddress = targetAddress;
         });
     }, true);
     // state.addWord(',', state => {
