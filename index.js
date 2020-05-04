@@ -38,6 +38,8 @@ function createInitialState() {
         currentSymbolName: undefined, //parser state,
         isCompileMode: false,
         currentSymbolStack: stack(), //stack of control structures we append words to
+        jumpStack: stack(),
+        currentAddress: undefined,
 
         push: function (x) { return this.stack.push(x) },
         pop: function () { return this.stack.pop(); },
@@ -103,20 +105,17 @@ function createInitialState() {
                 return false;
             } else {
                 //push the code to push the number to the stack
-                this.compileNextCall(state=>state.push(parsed));
+                this.compileNextCall(state => state.push(parsed));
             }
             return true;
         },
-
         compileNextCall: function (code) {
             let currentSymbol = this.currentSymbolStack.peek(1);
             currentSymbol.append(code);
         },
-
         getNextInputWord: function () {
             return this.getNextDelimitedWord(' ');
         },
-
         getNextDelimitedWord: function (delimiter) {
             //trim leading spaces
             this.input = this.input.trimStart();
@@ -173,8 +172,8 @@ function createInitialState() {
             this.addWord(name, state => state.push(index));
         },
         reset: function () {
-            this.stack = [];
-            this.memory = [];
+            this.stack = stack();
+            this.memory = stack();
             this.makeVariable('state');
         },
         callWord: function (wordName) {
@@ -188,8 +187,17 @@ function createInitialState() {
         },
         executeWord: function (word) {
             if (Array.isArray(word.code)) {
-                for (f of word.code) {
-                    f(this);
+                let addr = 0;
+                while (addr < word.code.length) {
+                    this.currentAddress = addr;
+                    word.code[addr](this);
+                    //check if we manipulated the current address
+                    if (this.currentAddress === addr) {
+                        addr++;
+                    }
+                    else {
+                        addr = this.currentAddress;
+                    }
                 }
             } else {
                 console.log('Unexpected format of code for word ' + word + '!');
@@ -199,7 +207,7 @@ function createInitialState() {
             let newCells = [...Array(cells)].map(_ => 0);
             this.memory.push(...newCells);
         },
-        startNewWordDefininion: function(name){
+        startNewWordDefininion: function (name) {
             if (this.isCompileMode) {
                 console.log('Cannot have nested definitions with :');
                 return;
@@ -269,8 +277,8 @@ function initializeBuiltinWords(state) {
         let c = state.pop();
         process.stdout.write(String.fromCharCode(c));
     });
-    state.addWord('.s', (state) => console.log(state.stack));
-    state.addWord('.r', (state) => console.log(state.returnStack));
+    state.addWord('.s', (state) => console.log(state.stack.stack));
+    state.addWord('.r', (state) => console.log(state.returnStack.stack));
     state.addWord('r>', state => state.stack.push(state.returnStack.pop()));
     state.addWord('>r', state => state.returnStack.push(state.stack.pop()));
     state.addWord('execute', (state) => {
@@ -346,7 +354,7 @@ function initializeBuiltinWords(state) {
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
         let word = state.findWord(nextWord);
-        console.log(word.code);
+        console.log(word.code); //totally useless with JS functions :()
     });
 
     state.addWord('.\"', state => {
@@ -431,11 +439,36 @@ function initializeBuiltinWords(state) {
         //TODO jump
         //destination is in the next cell
     });
+    state.addWord('_begin', state => {
+        state.jumpStack.push(state.currentAddress)
+    });
+    state.addWord('begin', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        //generate a branch placeholder
+        state.compileToken('_begin');
+    }, true);
+    state.addWord('until', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        state.compileNextCall(state => {
+            let condition = state.pop();
+            let targetAddress = state.jumpStack.pop();
+            if (condition == forthTrue) {
+                return;
+            }
+            //generate a jump back
+            state.currentAddress = targetAddress;
+        });
+    }, true);
     //inner helper for the 'do' call
-    state.addWord('_do', state=>{
+    state.addWord('_do', state => {
         let start = state.pop();
         //push i/j to return stack, so it can be retrieved as 'i'
         state.returnStack.push(start);
+
     });
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
@@ -446,11 +479,15 @@ function initializeBuiltinWords(state) {
         //do we consume words until loop/loop+? 
         state.compileToken('_do');
         // state.currentSymbolCode.push((state) => {
-        state.compileNextCall(state=>{
+        state.compileNextCall(state => {
             //TODO call inner "_do"
             //let start = state.pop();
             //push i/j to return stack, so it can be retrieved as 'i'
             //state.returnStack.push(start);
+            //pick up this control structure's code
+            let start = state.pop();
+            //push i/j to return stack, so it can be retrieved as 'i'
+            state.returnStack.push(start);
 
         });
     }, true);
@@ -458,21 +495,28 @@ function initializeBuiltinWords(state) {
         if (!state.ensureCompileMode()) {
             return;
         }
-        let currentSymbolCode = state.currentSymbolStack.pop();
-        state.compileNextCall(state=>{
+        let currentSymbolCode = state.currentSymbolStack.pop().stack;
+        state.compileNextCall(state => {
             //increment number on the top of the return stack
-            let loopCounter = state.returnStack.pop();
-            loopCounter++;
-            const loopLimit = state.pop();
-            if (loopCounter >= loopLimit) {
-                //end the loop
-                return;
-            }
-            //continue the loop, return counter and limit back
-            state.returnStack.push(loopCounter);
-            state.push(loopLimit);
-            //TODO jump back to the beginning - HOW?
+            do {
+                for (f of currentSymbolCode) {
+                    f(state);
+                }
 
+                let loopCounter = state.returnStack.pop();
+                loopCounter++;
+                const loopLimit = state.pop();
+                if (loopCounter >= loopLimit) {
+                    //end the loop
+                    return;
+                }
+                //continue the loop, return counter and limit back
+                state.returnStack.push(loopCounter);
+                state.push(loopLimit);
+                //TODO jump back to the beginning - HOW?
+                //execute the body of the loop N times
+            }
+            while (true);
         });
     }, true);
     // state.addWord(',', state => {

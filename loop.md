@@ -18,3 +18,26 @@ Let's start executing `f`
     Otherwise: we increment the loop counter and go back to the instruction after `do`
         how? the call chain up to now is in `evaluateToken` of the function f, and in `executeWord` looping over all of the code bits. We could introduce an 'instruction pointer' that `executeWord` could use OR introduce a loop control structure that can ingest all instruction the compiler emits its own set of instructions until the `loop` word.
         
+Even simpler case:
+
+` forth
+3 0 : f do i loop ;
+`
+
+this control structure, however, would need to be customized per each control structure (if, do..loop, begin..until)
+
+begin..until could be easier?
+
+: h begin 1+ dup dup . 10 >= until ;
+
+but still would make sense to implement a branch of some kind (within an execution context, that could jump forward / backward a specific amount of "instructions")
+
+
+then a begin..until with a following body:
+
+
+` forth
+: once begin 3 . true until ; 
+: twice 2 begin 1 - dup . dup 0= until ;
+: forever begin 4 . false until ;
+`
