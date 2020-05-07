@@ -119,11 +119,13 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 # eating the stack within the loop
 1 2 3 : f 3 0 do . loop ; f <- 3 2 1
 
-# if 
-: truefalse ( flag -- )
+# if then
+: is-true ( flag -- ) if ." true " then ; true is-true <- true
+: is-true ( flag -- ) if ." true " then ; false is-true <- 
 : is-zero? 0 = if ." yes " then ." ... " ; 0 is-zero? <- yes ...
 : is-zero? 0 = if ." yes " then ." ... " ; 1 is-zero? <- ...
 : is-zero? 0 = if ." yes " then ; 1 is-zero? <- 
+# if else then
 : is-it-zero?  0 = if ." Yes!" else ." No!" then ; 0 is-it-zero? <- Yes!
 : is-it-zero?  0 = if ." Yes!" else ." No!" then ; 1 is-it-zero? <- No!
 
