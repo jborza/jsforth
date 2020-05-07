@@ -462,17 +462,16 @@ function initializeBuiltinWords(state) {
             state.currentAddress = targetAddress;
         });
     }, true);
-    //inner helper for the 'do' call
-    // state.addWord('_do', state => {
-    //     let start = state.pop();
-    //     let limit = state.pop();
-    //     //push i/j to return stack, so it can be retrieved as 'i'
-    //     state.returnStack.push(limit);
-    //     state.returnStack.push(start);
-    //     //can also recompile as >r >r
-    //     state.executeWord
-
-    // });
+    state.addWord('again', state=>{
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        state.compileNextCall(state => {
+            let targetAddress = state.jumpStack.pop();
+            //generate a jump back
+            state.currentAddress = targetAddress;
+        });
+    }, true);
     state.addWord('(pushaddr)', state => {
         state.jumpStack.push(state.currentAddress);
     });
@@ -480,18 +479,14 @@ function initializeBuiltinWords(state) {
         if (!state.ensureCompileMode()) {
             return;
         }
-        // loop symbol code on the symbol stack
-        // state.currentSymbolStack.push(stack());
-        //do we consume words until loop/loop+? 
-        //compile address placeholder for the do
         state.compileToken('(do)');
+        //compile address placeholder for the do
         state.compileToken('(pushaddr)');        
     }, true);
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
-        // let currentSymbolCode = state.currentSymbolStack.pop().stack;
         state.compileNextCall(state => {
             //increment number on the top of the return stack
             let targetAddress = state.jumpStack.pop();
@@ -506,7 +501,8 @@ function initializeBuiltinWords(state) {
             //continue the loop, return counter and limit back
             state.returnStack.push(loopCounter); //>r
             state.returnStack.push(loopLimit); //>r
-            //TODO jump back to the beginning - HOW?
+            //jump back to the beginning
+            //this could actually be the branch instruction
             state.currentAddress = targetAddress;
         });
     }, true);
