@@ -40,6 +40,7 @@ function createInitialState() {
         currentSymbolStack: stack(), //stack of control structures we append words to
         jumpStack: stack(),
         currentAddress: undefined,
+        ifStack: stack(),
 
         push: function (x) { return this.stack.push(x) },
         pop: function () { return this.stack.pop(); },
@@ -348,7 +349,7 @@ function initializeBuiltinWords(state) {
     state.addWord('(', state => {
         let word = state.getNextDelimitedWord(')');
         //do nothing - discard word
-    });
+    }, true);
 
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
@@ -393,15 +394,33 @@ function initializeBuiltinWords(state) {
             state.push(xt);
         }
     }, true);
-    // state.addWord('if', state => {
-    //     if (!state.ensureCompileMode()) {
-    //         return;
-    //     }
-    //     //do stuff until else or then
-    //     let condition = state.pop();
-    // }, true)
+    state.addWord('if', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        //do stuff until else or then
+        let condition = state.pop();
+        //need some kind of forward reference?
+        state.compileNextCall(state => {
+            //push ourself on the if stack?
+            //???
+        });
+    }, true);
+    state.addWord('then', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        //then is a target for if
+        //do stuff until else or then
+        //let condition = state.pop();
+        //need some kind of forward reference?
+        state.compileNextCall(state => {
+            //???
+        });
+    }, true);
+    
     state.addWord('here', state => {
-        state.push(state.memory.length);
+        state.jumpStack.push(state.currentAddress);
     })
     state.addWord('allot', state => {
         state.allot(state.pop());
@@ -412,14 +431,14 @@ function initializeBuiltinWords(state) {
     state.addWord('j', state => {
         state.push(state.returnStack.peek(4));
     });
-    state.addWord('create', state => {
-        //???
-        let nextWord = state.getNextInputWord();
-        //similar to this.addWord()
-        state.addWord(nextWord, []);
-        // It does fill in the code for the newly-created word with standard boilerplate code that 
-        // pushes an aligned address on the stack and simply returns
-    });
+    // state.addWord('create', state => {
+    //     //???
+    //     let nextWord = state.getNextInputWord();
+    //     //similar to this.addWord()
+    //     state.addWord(nextWord, []);
+    //     // It does fill in the code for the newly-created word with standard boilerplate code that 
+    //     // pushes an aligned address on the stack and simply returns
+    // });
     state.addWord('depth', state => {
         state.push(state.stack.length);
     })
@@ -438,15 +457,12 @@ function initializeBuiltinWords(state) {
         //TODO jump
         //destination is in the next cell
     });
-    state.addWord('_begin', state => {
-        state.jumpStack.push(state.currentAddress)
-    });
     state.addWord('begin', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
         //generate a branch placeholder
-        state.compileToken('_begin');
+        state.compileToken('here');
     }, true);
     state.addWord('until', state => {
         if (!state.ensureCompileMode()) {
@@ -472,16 +488,13 @@ function initializeBuiltinWords(state) {
             state.currentAddress = targetAddress;
         });
     }, true);
-    state.addWord('(pushaddr)', state => {
-        state.jumpStack.push(state.currentAddress);
-    });
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
         state.compileToken('(do)');
         //compile address placeholder for the do
-        state.compileToken('(pushaddr)');        
+        state.compileToken('here');        
     }, true);
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) {
