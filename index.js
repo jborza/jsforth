@@ -407,10 +407,10 @@ function initializeBuiltinWords(state) {
         state.allot(state.pop());
     });
     state.addWord('i', state => {
-        state.push(state.returnStack.peek(1));
+        state.push(state.returnStack.peek(2));
     });
     state.addWord('j', state => {
-        state.push(state.returnStack.peek(2));
+        state.push(state.returnStack.peek(4));
     });
     state.addWord('create', state => {
         //???
@@ -463,13 +463,17 @@ function initializeBuiltinWords(state) {
         });
     }, true);
     //inner helper for the 'do' call
-    state.addWord('_do', state => {
-        let start = state.pop();
-        //push i/j to return stack, so it can be retrieved as 'i'
-        state.returnStack.push(start);
+    // state.addWord('_do', state => {
+    //     let start = state.pop();
+    //     let limit = state.pop();
+    //     //push i/j to return stack, so it can be retrieved as 'i'
+    //     state.returnStack.push(limit);
+    //     state.returnStack.push(start);
+    //     //can also recompile as >r >r
+    //     state.executeWord
 
-    });
-    state.addWord('_pushaddr', state => {
+    // });
+    state.addWord('(pushaddr)', state => {
         state.jumpStack.push(state.currentAddress);
     });
     state.addWord('do', state => {
@@ -480,21 +484,8 @@ function initializeBuiltinWords(state) {
         // state.currentSymbolStack.push(stack());
         //do we consume words until loop/loop+? 
         //compile address placeholder for the do
-
-        state.compileToken('_do');
-        state.compileToken('_pushaddr');
-        // state.currentSymbolCode.push((state) => {
-        // state.compileNextCall(state => {
-        //     //TODO call inner "_do"
-        //     //let start = state.pop();
-        //     //push i/j to return stack, so it can be retrieved as 'i'
-        //     //state.returnStack.push(start);
-        //     //pick up this control structure's code
-        //     let start = state.pop();
-        //     //push i/j to return stack, so it can be retrieved as 'i'
-        //     state.returnStack.push(start);
-
-        // });
+        state.compileToken('(do)');
+        state.compileToken('(pushaddr)');        
     }, true);
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) {
@@ -504,17 +495,17 @@ function initializeBuiltinWords(state) {
         state.compileNextCall(state => {
             //increment number on the top of the return stack
             let targetAddress = state.jumpStack.pop();
-
-            let loopCounter = state.returnStack.pop();
-            loopCounter++;
-            const loopLimit = state.pop();
-            if (loopCounter >= loopLimit) {
+            //pick up loop counter and limit
+            let loopLimit = state.returnStack.pop(); //r>
+            let loopCounter = state.returnStack.pop(); //r>
+            loopCounter++; //1+
+            if (loopCounter >= loopLimit) { // >=
                 //end the loop
                 return;
             }
             //continue the loop, return counter and limit back
-            state.returnStack.push(loopCounter);
-            state.push(loopLimit);
+            state.returnStack.push(loopCounter); //>r
+            state.returnStack.push(loopLimit); //>r
             //TODO jump back to the beginning - HOW?
             state.currentAddress = targetAddress;
         });
@@ -522,7 +513,7 @@ function initializeBuiltinWords(state) {
     // state.addWord(',', state => {
     //     //append top of the stack to the next cell of the dictionary
     //     let tos = state.pop();
-    //     //append it to ... top word code?
+    //     //append it to ... top word code? variable?
     // }
     // });
     // state.addWord('compile-only-error', state=>{
@@ -553,6 +544,7 @@ function initializeForthWords(state) {
     : cr newline emit ;
     : cells 1 * ;
     : cell 1 ;
+    : (do) >r >r ;
     `;
     for (line of initCode.split('\n')) {
         if (line.trim().length == 0)
