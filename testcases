@@ -78,6 +78,7 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 1 : two 2 ; two . <- 2
 1 : dup2 dup ; 2 dup2 . . <- 2 2
 : three 3 3 3 ; three . . . <- 3 3 3
+2 : dup-with-comment ( n -- n n ) dup ; dup-with-comment . . <- 2 2
 
 #print words in a function
 : hi ." hello" ; hi <- hello
@@ -119,6 +120,7 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 1 2 3 : f 3 0 do . loop ; f <- 3 2 1
 
 # if 
+: truefalse ( flag -- )
 : is-zero? 0 = if ." yes " then ." ... " ; 0 is-zero? <- yes ...
 : is-zero? 0 = if ." yes " then ." ... " ; 1 is-zero? <- ...
 : is-zero? 0 = if ." yes " then ; 1 is-zero? <- 
