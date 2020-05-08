@@ -398,10 +398,17 @@ function initializeBuiltinWords(state) {
         if (!state.ensureCompileMode()) {
             return;
         }
-        //do stuff until else or then
-        let condition = state.pop();
         //need some kind of forward reference?
         state.compileNextCall(state => {
+            //do stuff until else or then
+            let condition = state.pop();
+            if(condition == forthTrue){
+                //continue normally
+            }
+            else{
+                //TODO jump to else or jump to then (forward reference)
+            }
+            //if condition
             //push ourself on the if stack?
             //???
         });
@@ -411,6 +418,10 @@ function initializeBuiltinWords(state) {
             return;
         }
         //then is a target for if
+        // state.jumpStack.push(state.currentAddress);
+        let address = state.currentAddress;
+        //find the previous if
+        //patch it
         //do stuff until else or then
         //let condition = state.pop();
         //need some kind of forward reference?
