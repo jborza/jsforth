@@ -25,7 +25,7 @@ function stack() {
                 this.push(what);
             }
         },
-        depth: function(){ return this.stack.length;}
+        depth: function () { return this.stack.length; }
     }
 }
 
@@ -115,7 +115,7 @@ function createInitialState() {
             let currentSymbol = this.currentSymbolStack.peek(1);
             currentSymbol.append(code);
         },
-        nextAddress: function(){
+        nextAddress: function () {
             return this.currentSymbolStack.peek(1).depth();
         },
         getNextInputWord: function () {
@@ -358,8 +358,8 @@ function initializeBuiltinWords(state) {
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
         let word = state.findWord(nextWord);
-        for(let f of word.code){
-            console.log(f.toString()); 
+        for (let f of word.code) {
+            console.log(f.toString());
         }
     });
 
@@ -408,10 +408,10 @@ function initializeBuiltinWords(state) {
         state.compileNextCall(state => {
             //do stuff until else or then
             let condition = state.pop();
-            if(condition == forthTrue){
+            if (condition == forthTrue) {
                 //continue normally
             }
-            else{
+            else {
                 //TODO jump to else or jump to then (forward reference)
             }
             //if condition
@@ -435,7 +435,7 @@ function initializeBuiltinWords(state) {
             //???
         });
     }, true);
-    
+
     state.addWord('here', state => {
         state.jumpStack.push(state.currentAddress);
     })
@@ -487,7 +487,7 @@ function initializeBuiltinWords(state) {
             state.currentAddress = targetAddress;
         });
     }, true);
-    state.addWord('again', state=>{
+    state.addWord('again', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
@@ -497,9 +497,9 @@ function initializeBuiltinWords(state) {
             state.currentAddress = targetAddress;
         });
     }, true);
-    state.addWord('(pushaddress)', state=>{
+    state.addWord('(pushaddress)', state => {
         state.push(state.nextAddress());
-    },true);
+    }, true);
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
             return;
@@ -531,6 +531,15 @@ function initializeBuiltinWords(state) {
             state.currentAddress = targetAddress;
         });
     }, true);
+    state.addWord('words', state => {
+        let seenWords = new Set();
+        for (let word of state.dictionary) {
+            if (word.name !== '' && !seenWords.has(word.name)) {
+                seenWords.add(word.name);
+                print(word.name + ' ');
+            }
+        }
+    });
     // state.addWord(',', state => {
     //     //append top of the stack to the next cell of the dictionary
     //     let tos = state.pop();
@@ -546,23 +555,23 @@ function initializeForthWords(state) {
     let initCode = `
     -1 constant true
     0 constant false
-    : 1+ 1 + ;
-    : 1- 1 - ;
-    : ? @ . ;
-    : 1+ 1 + ;
-    : 1- 1 - ;
-    : 2+ 2 + ;
-    : 2- 2 - ;
-    : 2* 2 * ;
-    : 2/ 2 / ;
-    : 2drop drop drop ;
-    : 2dup over over ;
-    : nip swap drop ;
-    : 0< 0 < ;
-    : 0> 0 > ;
-    : 0= 0 = ;
+    : ? ( addr -- ) @ . ;
+    : 1+ ( n1 -- n2 ) 1 + ;
+    : 1- ( n1 -- n2 ) 1 - ;
+    : 1+ ( n1 -- n2 ) 1 + ;
+    : 1- ( n1 -- n2 ) 1 - ;
+    : 2+ ( n1 -- n2 ) 2 + ;
+    : 2- ( n1 -- n2 ) 2 - ;
+    : 2* ( n1 -- n2 ) 2 * ;
+    : 2/ ( n1 -- n2 ) 2 / ;
+    : 2drop ( n1 n2 -- ) drop drop ;
+    : 2dup ( n1 n2 -- n1 n2 n1 n2 ) over over ;
+    : nip ( n1 n2 -- n2 ) swap drop ;
+    : 0< ( n -- flag ) 0 < ;
+    : 0> ( n -- flag ) 0 > ;
+    : 0= ( n -- flag ) 0 = ;
     13 constant newline
-    : cr newline emit ;
+    : cr ( -- ) newline emit ;
     : cells 1 * ;
     : cell 1 ;
     : (do) >r >r ;
