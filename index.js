@@ -24,7 +24,8 @@ function stack() {
             else {
                 this.push(what);
             }
-        }
+        },
+        depth: function(){ return this.stack.length;}
     }
 }
 
@@ -113,6 +114,9 @@ function createInitialState() {
         compileNextCall: function (code) {
             let currentSymbol = this.currentSymbolStack.peek(1);
             currentSymbol.append(code);
+        },
+        nextAddress: function(){
+            return this.currentSymbolStack.peek(1).depth();
         },
         getNextInputWord: function () {
             return this.getNextDelimitedWord(' ');
@@ -354,7 +358,9 @@ function initializeBuiltinWords(state) {
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
         let word = state.findWord(nextWord);
-        console.log(word.code); //totally useless with JS functions :()
+        for(let f of word.code){
+            console.log(f.toString()); 
+        }
     });
 
     state.addWord('.\"', state => {
@@ -442,14 +448,6 @@ function initializeBuiltinWords(state) {
     state.addWord('j', state => {
         state.push(state.returnStack.peek(4));
     });
-    // state.addWord('create', state => {
-    //     //???
-    //     let nextWord = state.getNextInputWord();
-    //     //similar to this.addWord()
-    //     state.addWord(nextWord, []);
-    //     // It does fill in the code for the newly-created word with standard boilerplate code that 
-    //     // pushes an aligned address on the stack and simply returns
-    // });
     state.addWord('depth', state => {
         state.push(state.stack.length);
     })
@@ -473,15 +471,15 @@ function initializeBuiltinWords(state) {
             return;
         }
         //generate a branch placeholder
-        state.compileToken('here');
+        state.callWord('(pushaddress)');
     }, true);
     state.addWord('until', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
+        let targetAddress = state.pop();
         state.compileNextCall(state => {
             let condition = state.pop();
-            let targetAddress = state.jumpStack.pop();
             if (condition == forthTrue) {
                 return;
             }
@@ -493,27 +491,30 @@ function initializeBuiltinWords(state) {
         if (!state.ensureCompileMode()) {
             return;
         }
+        let targetAddress = state.pop();
         state.compileNextCall(state => {
-            let targetAddress = state.jumpStack.pop();
             //generate a jump back
             state.currentAddress = targetAddress;
         });
     }, true);
+    state.addWord('(pushaddress)', state=>{
+        state.push(state.nextAddress());
+    },true);
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
         state.compileToken('(do)');
         //compile address placeholder for the do
-        state.compileToken('here');        
+        state.callWord('(pushaddress)');
     }, true);
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) {
             return;
         }
+        let targetAddress = state.pop();
         state.compileNextCall(state => {
             //increment number on the top of the return stack
-            let targetAddress = state.jumpStack.pop();
             //pick up loop counter and limit
             let loopLimit = state.returnStack.pop(); //r>
             let loopCounter = state.returnStack.pop(); //r>
