@@ -349,9 +349,6 @@ function initializeBuiltinWords(state) {
         let value = state.pop();
         state.memory[address] += value;
     });
-    //state.addWord('+!', ['dup', '@', 'rot', '+', 'swap', '!' ])
-    // : +! ( n addr -- ) dup @ rot + swap !
-
     //comment word
     state.addWord('(', state => {
         let word = state.getNextDelimitedWord(')');
@@ -429,10 +426,9 @@ function initializeBuiltinWords(state) {
         let targetAddress = arguments.callee.targetAddress;
         state.currentAddress = targetAddress;
     });
+    state.addWord('noop', state=> {});
     state.addWord('0branch', state => {
-        let top = state.pop();
-        if (top != 0)
-            return;
+       
         //TODO jump
         //destination is in the next cell
     });
@@ -440,14 +436,8 @@ function initializeBuiltinWords(state) {
         if (!state.ensureCompileMode()) {
             return;
         }
-        //the compiled if body
-        state.compileNextCall(state => {            
-            let condition = state.pop();
-            if (condition == forthFalse) { //on true we continue into the if body
-                //jump to else or jump to then (forward reference)
-                state.currentAddress = arguments.callee.targetAddress;
-            }
-        });
+        //compile a noop to be replaced by a 0branch
+        state.compileToken('noop');
         //push current address on the stack to be picked up by else / then as a forward reference
         state.push(state.currentFunctionAddress());
     }, true);
@@ -460,22 +450,15 @@ function initializeBuiltinWords(state) {
             return;
         }
         //compile a no-op as a jump target
-        state.compileNextCall(state => {
-            //a no-op, we just jump here
-        });
-        //then is a target for if
-        // state.jumpStack.push(state.currentAddress);
-        let thenAddress = state.currentFunctionAddress();
-        //find the previous if and patch it
-        let ifAddress = state.pop();
+        state.compileToken('noop');
+        //patch the previous 'if' word:
         let currentFunctionBody = state.currentSymbolStack.peek(1);
-        let ifFunction = currentFunctionBody.stack[ifAddress];
-        ifFunction.targetAddress = thenAddress;
-        //find the previous if
-        //patch it
-        //do stuff until else or then
-        //let condition = state.pop();
-        //need some kind of forward reference?
+        //replace noop with 0branch to this 'then'
+        let thenAddress = state.currentFunctionAddress();
+        let branchFunction = make0branch(thenAddress);
+        //find the previous if and replace it with the created 0branch
+        let ifPlaceholderAddress = state.pop();
+        currentFunctionBody.stack[ifPlaceholderAddress] = branchFunction;
        
     }, true);
     state.addWord('begin', state => {
@@ -561,6 +544,16 @@ function initializeBuiltinWords(state) {
     // state.addWord('compile-only-error', state=>{
 
     // })
+}
+
+function make0branch(targetAddress){
+    return state => {
+        let top = state.pop();
+        if (top == 0)
+        {
+            state.currentAddress = targetAddress;
+        }
+    }
 }
 
 function initializeForthWords(state) {
