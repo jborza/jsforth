@@ -122,13 +122,12 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 # if then
 : is-true ( flag -- ) if ." true " then ; true is-true <- true
 : is-true ( flag -- ) if ." true " then ; false is-true <- 
+: is-true-dot if ." true" then ." ." ; false is-true-dot <- . 
 : is-zero? 0 = if ." yes " then ." ... " ; 0 is-zero? <- yes ...
 : is-zero? 0 = if ." yes " then ." ... " ; 1 is-zero? <- ...
 : is-zero? 0 = if ." yes " then ; 1 is-zero? <- 
 # if else then
+: print-bool if ." true " else ." false " then ; true false print-bool print-bool <- false true
+: print-bool-dot if ." true" else ." false" then ." ." ; true false print-bool-dot print-bool-dot <- false.true.
 : is-it-zero?  0 = if ." Yes!" else ." No!" then ; 0 is-it-zero? <- Yes!
 : is-it-zero?  0 = if ." Yes!" else ." No!" then ; 1 is-it-zero? <- No!
-
-# see
-
-#: 3dup dup dup dup ; see 3dup <- dup dup dup

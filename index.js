@@ -115,7 +115,10 @@ function createInitialState() {
             let currentSymbol = this.currentSymbolStack.peek(1);
             currentSymbol.append(code);
         },
-        nextAddress: function () {
+        currentFunctionAddress: function () {
+            return this.currentSymbolStack.peek(1).depth() - 1;
+        },
+        nextFunctionAddress: function () {
             return this.currentSymbolStack.peek(1).depth();
         },
         getNextInputWord: function () {
@@ -400,41 +403,7 @@ function initializeBuiltinWords(state) {
             state.push(xt);
         }
     }, true);
-    state.addWord('if', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
-        //need some kind of forward reference?
-        state.compileNextCall(state => {
-            //do stuff until else or then
-            let condition = state.pop();
-            if (condition == forthTrue) {
-                //continue normally
-            }
-            else {
-                //TODO jump to else or jump to then (forward reference)
-            }
-            //if condition
-            //push ourself on the if stack?
-            //???
-        });
-    }, true);
-    state.addWord('then', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
-        //then is a target for if
-        // state.jumpStack.push(state.currentAddress);
-        let address = state.currentAddress;
-        //find the previous if
-        //patch it
-        //do stuff until else or then
-        //let condition = state.pop();
-        //need some kind of forward reference?
-        state.compileNextCall(state => {
-            //???
-        });
-    }, true);
+
 
     state.addWord('here', state => {
         state.jumpStack.push(state.currentAddress);
@@ -456,8 +425,9 @@ function initializeBuiltinWords(state) {
         state.push(state.stack[state.stack.length - offset - 1]);
     });
     state.addWord('branch', state => {
-        //TODO jump
-        //destination is in the next cell
+        //jump, destination is in the targetAddress of this function
+        let targetAddress = arguments.callee.targetAddress;
+        state.currentAddress = targetAddress;
     });
     state.addWord('0branch', state => {
         let top = state.pop();
@@ -466,6 +436,48 @@ function initializeBuiltinWords(state) {
         //TODO jump
         //destination is in the next cell
     });
+    state.addWord('if', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        //the compiled if body
+        state.compileNextCall(state => {            
+            let condition = state.pop();
+            if (condition == forthFalse) { //on true we continue into the if body
+                //jump to else or jump to then (forward reference)
+                state.currentAddress = arguments.callee.targetAddress;
+            }
+        });
+        //push current address on the stack to be picked up by else / then as a forward reference
+        state.push(state.currentFunctionAddress());
+    }, true);
+    state.addWord('else', state => {
+        //TODO else
+    }, true);
+
+    state.addWord('then', state => {
+        if (!state.ensureCompileMode()) {
+            return;
+        }
+        //compile a no-op as a jump target
+        state.compileNextCall(state => {
+            //a no-op, we just jump here
+        });
+        //then is a target for if
+        // state.jumpStack.push(state.currentAddress);
+        let thenAddress = state.currentFunctionAddress();
+        //find the previous if and patch it
+        let ifAddress = state.pop();
+        let currentFunctionBody = state.currentSymbolStack.peek(1);
+        let ifFunction = currentFunctionBody.stack[ifAddress];
+        ifFunction.targetAddress = thenAddress;
+        //find the previous if
+        //patch it
+        //do stuff until else or then
+        //let condition = state.pop();
+        //need some kind of forward reference?
+       
+    }, true);
     state.addWord('begin', state => {
         if (!state.ensureCompileMode()) {
             return;
@@ -498,7 +510,7 @@ function initializeBuiltinWords(state) {
         });
     }, true);
     state.addWord('(pushaddress)', state => {
-        state.push(state.nextAddress());
+        state.push(state.nextFunctionAddress());
     }, true);
     state.addWord('do', state => {
         if (!state.ensureCompileMode()) {
