@@ -39,6 +39,7 @@ function createInitialState() {
         currentSymbolName: undefined, //parser state,
         isCompileMode: false,
         currentSymbolStack: stack(), //stack of control structures we append words to
+        currentExecutingWord: undefined,
         jumpStack: stack(),
         currentAddress: undefined,
         ifStack: stack(),
@@ -112,14 +113,17 @@ function createInitialState() {
             return true;
         },
         compileNextCall: function (code) {
-            let currentSymbol = this.currentSymbolStack.peek(1);
+            let currentSymbol = this.currentFunctionBody();
             currentSymbol.append(code);
         },
         currentFunctionAddress: function () {
-            return this.currentSymbolStack.peek(1).depth() - 1;
+            return this.currentFunctionBody().depth() - 1;
         },
         nextFunctionAddress: function () {
-            return this.currentSymbolStack.peek(1).depth();
+            return this.currentFunctionBody().depth();
+        },
+        currentFunctionBody: function () {
+            return this.currentSymbolStack.peek(1);
         },
         getNextInputWord: function () {
             return this.getNextDelimitedWord(' ');
@@ -193,21 +197,21 @@ function createInitialState() {
             return false;
         },
         executeWord: function (word) {
-            if (Array.isArray(word.code)) {
-                let addr = 0;
-                while (addr < word.code.length) {
-                    this.currentAddress = addr;
-                    word.code[addr](this);
-                    //check if we manipulated the current address
-                    if (this.currentAddress === addr) {
-                        addr++;
-                    }
-                    else {
-                        addr = this.currentAddress;
-                    }
-                }
-            } else {
+            if (!Array.isArray(word.code)) {
                 console.log('Unexpected format of code for word ' + word + '!');
+            }
+            this.currentExecutingWord = word;
+            let addr = 0;
+            while (addr < word.code.length) {
+                this.currentAddress = addr;
+                word.code[addr](this);
+                //check if we manipulated the current address
+                if (this.currentAddress === addr) {
+                    addr++;
+                }
+                else {
+                    addr = this.currentAddress;
+                }
             }
         },
         allot: function (cells) {
@@ -387,9 +391,7 @@ function initializeBuiltinWords(state) {
 
     // compile mode tokens
     state.addWord(';', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
+        if (!state.ensureCompileMode()) { return; }
 
         let wasAnonymousWord = state.currentSymbolName === '';
         let currentSymbolCode = state.currentSymbolStack.pop();
@@ -400,7 +402,6 @@ function initializeBuiltinWords(state) {
             state.push(xt);
         }
     }, true);
-
 
     state.addWord('here', state => {
         state.jumpStack.push(state.currentAddress);
@@ -423,48 +424,57 @@ function initializeBuiltinWords(state) {
     });
     state.addWord('branch', state => {
         //jump, destination is in the targetAddress of this function
-        let targetAddress = arguments.callee.targetAddress;
+        //read the argument off the function       
+        let targetAddress = state.currentExecutingWord.code[state.currentAddress + 1];
+        state.currentAddress += 2;
         state.currentAddress = targetAddress;
     });
-    state.addWord('noop', state=> {});
     state.addWord('0branch', state => {
-       
-        //TODO jump
-        //destination is in the next cell
-    });
-    state.addWord('if', state => {
-        if (!state.ensureCompileMode()) {
-            return;
+        let targetAddress = state.currentExecutingWord.code[state.currentAddress + 1];
+        state.currentAddress += 2;
+        let top = state.pop();
+        if (top == 0) {
+            state.currentAddress = targetAddress;
         }
-        //compile a noop to be replaced by a 0branch
-        state.compileToken('noop');
+    });
+    state.addWord('noop', state => { });
+    state.addWord('if', state => {
+        if (!state.ensureCompileMode()) { return; }
+        state.compileToken('0branch');
+        //compile a dummy address to be replaced by the actual address in else/then
+        state.compileNextCall(0);
         //push current address on the stack to be picked up by else / then as a forward reference
         state.push(state.currentFunctionAddress());
     }, true);
     state.addWord('else', state => {
-        //TODO else
+        // compile a jump to then
+        state.compileToken('branch');
+        //compile a dummy address to be replaced by the actual address in then
+        state.compileNextCall(0);
+        //fix the previous 'if' word with a 0branch to else
+        let elseAddress = state.currentFunctionAddress();
+        let previousJumpAddress = state.pop();
+        let currentFunctionBody = state.currentFunctionBody();
+        let elseBodyAddress = elseAddress + 1;
+        currentFunctionBody.stack[previousJumpAddress] = elseBodyAddress; //elseAddress points to the jump address
+        //push current address on the stack to be picked up by then as a forward reference
+        state.push(elseAddress);
     }, true);
 
     state.addWord('then', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
+        if (!state.ensureCompileMode()) { return; }
         //compile a no-op as a jump target
         state.compileToken('noop');
-        //patch the previous 'if' word:
-        let currentFunctionBody = state.currentSymbolStack.peek(1);
-        //replace noop with 0branch to this 'then'
+        //patch the previous 'if' / 'else' word:
+        let currentFunctionBody = state.currentFunctionBody();
         let thenAddress = state.currentFunctionAddress();
-        let branchFunction = make0branch(thenAddress);
-        //find the previous if and replace it with the created 0branch
-        let ifPlaceholderAddress = state.pop();
-        currentFunctionBody.stack[ifPlaceholderAddress] = branchFunction;
-       
+        //find the previous 0branch by if (or branch by else) and patch its offset
+        let previousJumpAddress = state.pop();
+        currentFunctionBody.stack[previousJumpAddress] = thenAddress;
+
     }, true);
     state.addWord('begin', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
+        if (!state.ensureCompileMode()) { return; }
         //generate a branch placeholder
         state.callWord('(pushaddress)');
     }, true);
@@ -483,9 +493,7 @@ function initializeBuiltinWords(state) {
         });
     }, true);
     state.addWord('again', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
+        if (!state.ensureCompileMode()) { return; }
         let targetAddress = state.pop();
         state.compileNextCall(state => {
             //generate a jump back
@@ -496,17 +504,13 @@ function initializeBuiltinWords(state) {
         state.push(state.nextFunctionAddress());
     }, true);
     state.addWord('do', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
+        if (!state.ensureCompileMode()) { return; }
         state.compileToken('(do)');
         //compile address placeholder for the do
         state.callWord('(pushaddress)');
     }, true);
     state.addWord('loop', state => {
-        if (!state.ensureCompileMode()) {
-            return;
-        }
+        if (!state.ensureCompileMode()) { return; }
         let targetAddress = state.pop();
         state.compileNextCall(state => {
             //increment number on the top of the return stack
@@ -544,16 +548,6 @@ function initializeBuiltinWords(state) {
     // state.addWord('compile-only-error', state=>{
 
     // })
-}
-
-function make0branch(targetAddress){
-    return state => {
-        let top = state.pop();
-        if (top == 0)
-        {
-            state.currentAddress = targetAddress;
-        }
-    }
 }
 
 function initializeForthWords(state) {
