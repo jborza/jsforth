@@ -118,6 +118,11 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 : g 3 0 do i . loop ; g <- 0 1 2
 # eating the stack within the loop
 1 2 3 : f 3 0 do . loop ; f <- 3 2 1
+# loop within a loop
+: print-twice 2 0 do dup . loop ; 42 print-twice <- 42 42
+: print-twice 2 0 do dup . loop ; : print-numbers 5 0 do i print-twice loop ; print-numbers <- 0 0 1 1 2 2 3 3 4 4
+# nested loop
+: print-nested 4 0 do i 2 0 do  i j . . loop loop ; print-nested <- 0 0 0 1 1 0 1 1 2 0 2 1 3 0 3 1
 
 # if then
 : is-true ( flag -- ) if ." true " then ; true is-true <- true
