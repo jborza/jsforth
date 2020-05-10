@@ -29,11 +29,38 @@ function stack() {
     }
 }
 
+function dictionary() {
+    return {
+        dictionary: [],
+        findWord: function (name) {
+            //forwards as we unshift the new definitions
+            for (let word of this.dictionary) {
+                //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
+                if (word.name == name) {
+                    return word;
+                }
+            }
+            return undefined;
+        },
+        addWord: function (name, code, immediate = false) {
+            let wordCode = [];
+            wordCode = wordCode.concat(code);
+            word = {
+                name: name,
+                code: wordCode,
+                immediate: immediate
+            };
+            this.dictionary.unshift(word);
+            return word;
+        },
+    }
+}
+
 function createInitialState() {
     return {
         stack: stack(),
         returnStack: stack(),
-        dictionary: [],
+        dictionary: dictionary(),
         memory: [],
         input: undefined, //parser state
         currentSymbolName: undefined, //parser state,
@@ -46,6 +73,8 @@ function createInitialState() {
 
         push: function (x) { return this.stack.push(x) },
         pop: function () { return this.stack.pop(); },
+
+        addWord: function (name, code, immediate = false) { return this.dictionary.addWord(name,code,immediate);},
 
         evaluateLine: function (line, printLF = true) {
             this.input = line;
@@ -89,7 +118,7 @@ function createInitialState() {
         //TODO merge with interpretToken (same structure, different 'hooks' of what to do with a word or a symbol)
         compileToken: function (token) {
             //When the interpreter finds a word, it looks the word up in the dictionary.
-            const word = this.findWord(token);
+            const word = this.dictionary.findWord(token);
             if (word !== undefined) {
                 if (word.immediate) {
                     //execute immediate words
@@ -142,36 +171,14 @@ function createInitialState() {
             else
                 this.input = undefined;
             return word;
-        },
-        //add a word to the dictionary
-        addWord: function (name, code, immediate = false) {
-            let wordCode = [];
-            wordCode = wordCode.concat(code);
-            word = {
-                name: name,
-                code: wordCode,
-                immediate: immediate
-            };
-            this.dictionary.unshift(word);
-            return word;
-        },
+        },        
         getExecutionToken: function (name) {
-            const word = this.findWord(name);
+            const word = this.dictionary.findWord(name);
             if (word === undefined) {
                 return undefined;
             }
             return word; //TODO or wrapped word
-        },
-        findWord: function (name) {
-            //forwards as we unshift the new definitions
-            for (let word of this.dictionary) {
-                //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
-                if (word.name == name) {
-                    return word;
-                }
-            }
-            return undefined;
-        },
+        },        
         ensureCompileMode: function () {
             if (!this.isCompileMode) {
                 console.log('Interpreting a compile-only word');
@@ -189,7 +196,7 @@ function createInitialState() {
             this.makeVariable('state');
         },
         callWord: function (wordName) {
-            const word = this.findWord(wordName);
+            const word = this.dictionary.findWord(wordName);
             if (word !== undefined) {
                 //If the word is found, the interpreter executes the code associated with the word, and then returns to parse the rest of the input stream. 
                 this.executeWord(word);
@@ -387,7 +394,7 @@ function initializeBuiltinWords(state) {
     });
 
     //NONSTANDARD
-    state.addWord('??', (state) => console.log(state.dictionary));
+    state.addWord('??', (state) => console.log(state.dictionary.dictionary));
     state.addWord('???', (state) => console.log(state.memory.stack));
 
     // compile mode tokens
@@ -533,7 +540,7 @@ function initializeBuiltinWords(state) {
     }, true);
     state.addWord('words', state => {
         let seenWords = new Set();
-        for (let word of state.dictionary) {
+        for (let word of state.dictionary.dictionary) {
             if (word.name !== '' && !seenWords.has(word.name)) {
                 seenWords.add(word.name);
                 print(word.name + ' ');
