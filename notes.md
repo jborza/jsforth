@@ -11,6 +11,8 @@
 - begin ... while ... repeat
 - dictionaries?
 
+- provide forth examples - 99 bottles of beer, fizzbuzz, etc
+
 # notes 
 
 The word : (colon) parses a name as a parameter, creates a dictionary entry (a colon definition) and enters compilation state. The interpreter continues to read space-delimited words from the user input device. If a word is found, the interpreter executes the compilation semantics associated with the word, instead of the interpretation semantics. The default compilation semantics of a word are to append its interpretation semantics to the current definition.[21]
@@ -194,3 +196,13 @@ tldr: it is Forth, you already have a stack at hand so use it.
 
 # writing a forth
 https://www.sifflez.org/lectures/ASE/C3.pdf
+
+# refactoring forth - trimming
+
+https://docs.microsoft.com/en-us/archive/blogs/ashleyf/refactor-trim-build
+
+- a lot of words can be implemented in terms of pick and roll
+e.g. : SWAP ( a b -- b a) 1 ROLL ;
+: DUP ( a -- a a) 0 PICK ;
+: ROT ( a b c -- b c a) 2 ROLL ;
+
