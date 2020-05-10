@@ -142,6 +142,7 @@ function createInitialState() {
             }
             return true;
         },
+        compileTokens: function(tokens){ for(const token of tokens) this.compileToken(token);},
         compileNextCall: function (code) {
             let currentSymbol = this.currentFunctionBody();
             let jumpOffset = currentSymbol.depth();
@@ -329,6 +330,12 @@ function initializeBuiltinWords(state) {
     });
     state.addWord('=', (state) => {
         state.push(booleanToForthFlag(state.pop() == state.pop()));
+    });
+    state.addWord('<=', (state) => {
+        state.push(booleanToForthFlag(state.pop() >= state.pop()));
+    });
+    state.addWord('>=', (state) => {
+        state.push(booleanToForthFlag(state.pop() <= state.pop()));
     });
     state.addWord('and', (state) => {
         state.push(booleanToForthFlag(state.pop() && state.pop()));
@@ -540,23 +547,12 @@ function initializeBuiltinWords(state) {
     state.addWord('loop', state => {
         if (!state.ensureCompileMode()) { return; }
         let targetAddress = state.pop();
-        state.compileNextCall(state => {
-            //increment number on the top of the return stack
-            //pick up loop counter and limit
-            let loopLimit = state.returnStack.pop(); //r>
-            let loopCounter = state.returnStack.pop(); //r>
-            loopCounter++; //1+
-            if (loopCounter >= loopLimit) { // >=
-                //end the loop
-                return;
-            }
-            //continue the loop, return counter and limit back
-            state.returnStack.push(loopCounter); //>r
-            state.returnStack.push(loopLimit); //>r
-            //jump back to the beginning
-            //this could actually be the branch instruction
-            state.currentAddress = targetAddress;
-        });
+        //pop loop counter and limit from return stack, jump back (and prepare return stack) if we need to loop again
+        state.compileTokens('r> r> 1+ 2dup > if >r >r branch'.split(' '));
+        //add adress of the 'do' as the jump target
+        state.compileNextCall(targetAddress);       
+        //clean up the stack otherwise
+        state.compileTokens('else drop drop then'.split(' '));
     }, true);
     state.addWord('words', state => {
         let seenWords = new Set();

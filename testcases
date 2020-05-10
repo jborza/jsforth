@@ -52,6 +52,12 @@
 0 -1 xor . <- -1
 0 invert . <- -1
 -1 invert . <- 0
+4 3 >= . <- -1
+4 4 >= . <- -1
+3 4 >= . <- 0
+4 3 <= . <- 0
+4 4 <= . <- -1
+3 4 <= . <- -1
 
 #mod
 3 3 mod . <- 0
@@ -143,10 +149,15 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 # if within a function
 : is-false invert if ." false" then ; : is-true if ." true" then ; : which-boolean dup is-true is-false ; false which-boolean <- false
 
+# do within a function
+: print-123 4 1 do i . loop ; : print-123123 print-123 print-123 ; print-123123 <- 1 2 3 1 2 3 
 
 # loop within a loop
 : print-twice dup . dup . ; : print-numbers 5 0 do i print-twice loop ; print-numbers <- 0 0 1 1 2 2 3 3 4 4
 : print-twice 2 0 do dup . loop ; : print-numbers 5 0 do i print-twice loop ; print-numbers <- 0 0 1 1 2 2 3 3 4 4
+
+# loop within an if
+: print-if-high 100 > if ." such a b" 3 0 do ." i" loop ." g number" then ;
 
 # fizz buzz
 : fizz dup 3 mod 0= if ." fizz " else . then ; : do-fizz 10 1 do i fizz loop ; do-fizz <- 1 2 fizz 4 5 fizz 7 8 fizz
