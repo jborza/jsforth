@@ -142,6 +142,12 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 : is-it-zero?  0 = if ." Yes!" else ." No!" then ; 0 is-it-zero? <- Yes!
 : is-it-zero?  0 = if ." Yes!" else ." No!" then ; 1 is-it-zero? <- No!
 
+# nested ifs
+: high dup 10 > if ." >10 " 100 > if ." >100 " then then ; 1000 high <- >10 >100
+
+# nested if/else
+: eggsize   dup 18 < if  ." reject " else   dup 21 < if  ." small "       else   dup 24 < if  ." medium "      else   dup 27 < if  ." large "       else   dup 30 < if  ." extra large " else      ." error "   then then then then then drop ; 10 eggsize 20 eggsize 24 eggsize 26 eggsize 29 eggsize 33 eggsize <- reject small large large extra large error
+
 # min max
 3 4 min . <- 3
 3 4 max . <- 4
@@ -157,7 +163,7 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 : print-twice 2 0 do dup . loop ; : print-numbers 5 0 do i print-twice loop ; print-numbers <- 0 0 1 1 2 2 3 3 4 4
 
 # loop within an if
-: print-if-high 100 > if ." such a b" 3 0 do ." i" loop ." g number" then ;
+: print-if-high 100 > if ." such a b" 3 0 do ." i" loop ." g number" then ; 1000 print-if-high <- such a biiig number
 
 # fizz buzz
 : fizz dup 3 mod 0= if ." fizz " else . then ; : do-fizz 10 1 do i fizz loop ; do-fizz <- 1 2 fizz 4 5 fizz 7 8 fizz
