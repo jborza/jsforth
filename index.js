@@ -38,7 +38,7 @@ function createInitialState() {
         input: undefined, //parser state
         currentSymbolName: undefined, //parser state,
         isCompileMode: false,
-        currentSymbolStack: stack(), //stack of control structures we append words to
+        currentCompileSymbol: stack(), //word currently compiled
         currentExecutingWord: undefined,
         jumpStack: stack(),
         currentAddress: undefined,
@@ -97,6 +97,7 @@ function createInitialState() {
                 } else {
                     // compile a definition for this word
                     let xt = this.getExecutionToken(token);
+                    // this.compileNextCall(state=>state.executeWord(xt));
                     this.compileNextCall(word.code);
                 }
                 return;
@@ -123,7 +124,7 @@ function createInitialState() {
             return this.currentFunctionBody().depth();
         },
         currentFunctionBody: function () {
-            return this.currentSymbolStack.peek(1);
+            return this.currentCompileSymbol;
         },
         getNextInputWord: function () {
             return this.getNextDelimitedWord(' ');
@@ -224,7 +225,7 @@ function createInitialState() {
                 return;
             }
             this.isCompileMode = true;
-            this.currentSymbolStack.push(stack());
+            this.currentCompileSymbol = stack();
             this.currentSymbolName = name;
         }
     };
@@ -387,14 +388,14 @@ function initializeBuiltinWords(state) {
 
     //NONSTANDARD
     state.addWord('??', (state) => console.log(state.dictionary));
-    state.addWord('???', (state) => console.log(state.memory));
+    state.addWord('???', (state) => console.log(state.memory.stack));
 
     // compile mode tokens
     state.addWord(';', state => {
         if (!state.ensureCompileMode()) { return; }
 
         let wasAnonymousWord = state.currentSymbolName === '';
-        let currentSymbolCode = state.currentSymbolStack.pop();
+        let currentSymbolCode = state.currentFunctionBody();
         let xt = state.addWord(state.currentSymbolName, currentSymbolCode.stack);
         state.currentSymbolName = undefined;
         state.isCompileMode = false;
