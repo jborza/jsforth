@@ -140,6 +140,10 @@ variable eggs 1 eggs ! 2 eggs +! eggs @ . <- 3
 3 4 min . <- 3
 3 4 max . <- 4
 
+# if within a function
+: is-false invert if ." false" then ; : is-true if ." true" then ; : which-boolean dup is-true is-false ; false which-boolean <- false
+
+
 # loop within a loop
 : print-twice dup . dup . ; : print-numbers 5 0 do i print-twice loop ; print-numbers <- 0 0 1 1 2 2 3 3 4 4
 : print-twice 2 0 do dup . loop ; : print-numbers 5 0 do i print-twice loop ; print-numbers <- 0 0 1 1 2 2 3 3 4 4

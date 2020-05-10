@@ -74,7 +74,7 @@ function createInitialState() {
         push: function (x) { return this.stack.push(x) },
         pop: function () { return this.stack.pop(); },
 
-        addWord: function (name, code, immediate = false) { return this.dictionary.addWord(name,code,immediate);},
+        addWord: function (name, code, immediate = false) { return this.dictionary.addWord(name, code, immediate); },
 
         evaluateLine: function (line, printLF = true) {
             this.input = line;
@@ -144,7 +144,21 @@ function createInitialState() {
         },
         compileNextCall: function (code) {
             let currentSymbol = this.currentFunctionBody();
-            currentSymbol.append(code);
+            let jumpOffset = currentSymbol.depth();
+            if (Array.isArray(code)) {
+                //offset jump addresses
+                for (let instruction of code) {
+                    if (typeof (instruction) == 'number') {
+                        currentSymbol.append(instruction + jumpOffset);
+                    }
+                    else {
+                        currentSymbol.append(instruction);
+                    }
+                }
+            }
+            else {
+                currentSymbol.append(code);
+            }
         },
         currentFunctionAddress: function () {
             return this.currentFunctionBody().depth() - 1;
@@ -171,14 +185,14 @@ function createInitialState() {
             else
                 this.input = undefined;
             return word;
-        },        
+        },
         getExecutionToken: function (name) {
             const word = this.dictionary.findWord(name);
             if (word === undefined) {
                 return undefined;
             }
             return word; //TODO or wrapped word
-        },        
+        },
         ensureCompileMode: function () {
             if (!this.isCompileMode) {
                 console.log('Interpreting a compile-only word');
@@ -369,7 +383,7 @@ function initializeBuiltinWords(state) {
 
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
-        let word = state.findWord(nextWord);
+        let word = state.dictionary.findWord(nextWord);
         for (let f of word.code) {
             console.log(f.toString());
         }
