@@ -174,6 +174,9 @@ function createInitialState() {
         },
         getNextDelimitedWord: function (delimiter) {
             //trim leading spaces
+            if(this.input === undefined){
+                return '';
+            }
             this.input = this.input.trimStart();
             let index = this.input.indexOf(delimiter);
             if (index == -1) {
@@ -384,6 +387,9 @@ function initializeBuiltinWords(state) {
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
         let word = state.dictionary.findWord(nextWord);
+        if(word == undefined){
+            throw 'undefined word';
+        }
         for (let f of word.code) {
             console.log(f.toString());
         }
