@@ -574,6 +574,8 @@ function initializeForthWords(state) {
     : cells 1 * ;
     : cell 1 ;
     : (do) >r >r ;
+    : max ( n1 n2 -- n3) 2dup > if drop else nip then ;
+    : min ( n1 n2 -- n3) 2dup < if drop else nip then ;
     `;
     for (line of initCode.split('\n')) {
         if (line.trim().length == 0)
