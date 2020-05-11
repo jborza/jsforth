@@ -76,32 +76,34 @@ function createInitialState() {
 
         addWord: function (name, code, immediate = false) { return this.dictionary.addWord(name, code, immediate); },
 
-        evaluateLine: function (line, printLF = true) {
+        evaluateLine: function (line, printOk = true) {
             this.input = line;
             while (this.input !== undefined) {
                 let nextToken = this.getNextInputWord();
                 if (nextToken === undefined) {
                     break;
                 }
-                this.evaluateToken(nextToken);
+                if (!this.evaluateToken(nextToken)) {
+                    return;
+                }
             }
-            if (printLF) {
-                process.stdout.write('\n')
+            if (printOk === true) {
+                console.log(' ok');
             }
         },
 
         evaluateToken: function (token) {
             if (this.isCompileMode) {
-                this.compileToken(token);
+                return this.compileToken(token);
             } else {
-                this.interpretToken(token);
+                return this.interpretToken(token);
             }
         },
 
         interpretToken: function (token) {
             //When the interpreter finds a word, it looks the word up in the dictionary.
             if (this.callWord(token)) {
-                return;
+                return true;
             }
             //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
             const parsed = parseInt(token);
@@ -129,7 +131,7 @@ function createInitialState() {
                     // this.compileNextCall(state=>state.executeWord(xt));
                     this.compileNextCall(word.code);
                 }
-                return;
+                return true;
             }
             //If the word isn't found, the word is assumed to be a number and an attempt is made to convert it into a number and push it on the stack;
             const parsed = parseInt(token);
@@ -142,7 +144,7 @@ function createInitialState() {
             }
             return true;
         },
-        compileTokens: function(tokens){ for(const token of tokens) this.compileToken(token);},
+        compileTokens: function (tokens) { for (const token of tokens) this.compileToken(token); },
         compileNextCall: function (code) {
             let currentSymbol = this.currentFunctionBody();
             let jumpOffset = currentSymbol.depth();
@@ -175,7 +177,7 @@ function createInitialState() {
         },
         getNextDelimitedWord: function (delimiter) {
             //trim leading spaces
-            if(this.input === undefined){
+            if (this.input === undefined) {
                 return '';
             }
             this.input = this.input.trimStart();
@@ -394,7 +396,7 @@ function initializeBuiltinWords(state) {
     state.addWord('see', state => {
         let nextWord = state.getNextInputWord();
         let word = state.dictionary.findWord(nextWord);
-        if(word == undefined){
+        if (word == undefined) {
             throw 'undefined word';
         }
         for (let f of word.code) {
@@ -550,7 +552,7 @@ function initializeBuiltinWords(state) {
         //pop loop counter and limit from return stack, jump back (and prepare return stack) if we need to loop again
         state.compileTokens('r> r> 1+ 2dup > if >r >r branch'.split(' '));
         //add adress of the 'do' as the jump target
-        state.compileNextCall(targetAddress);       
+        state.compileNextCall(targetAddress);
         //clean up the stack otherwise
         state.compileTokens('else drop drop then'.split(' '));
     }, true);
@@ -616,19 +618,24 @@ function booleanToForthFlag(boolean) {
     return boolean ? -1 : 0;
 }
 
+var noprompt = false;
+
 function repl() {
     let stdin = process.openStdin();
     let state = createInitialState();
     state.reset();
     initializeBuiltinWords(state);
     initializeForthWords(state);
-    if (process.argv.includes('/noprompt') === false) {
+    if (process.argv.includes('/noprompt')) {
+        noprompt = true;
+    }
+    if (noprompt === false) {
         console.log('? ')
     }
 
     stdin.addListener("data", function (line) {
         let trimmedLine = line.toString().trim();
-        state.evaluateLine(trimmedLine);
+        state.evaluateLine(trimmedLine, !noprompt);
     });
 }
 
